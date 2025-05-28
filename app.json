@@ -1,66 +1,24 @@
 {
   "expo": {
-    "name": "NFC Crypto Wallet",
-    "slug": "nfc-crypto-wallet",
+    "name": "bolt-expo-nativewind",
+    "slug": "bolt-expo-nativewind",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#3B82F6"
-    },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.wallet.nfccrypto",
-      "infoPlist": {
-        "NFCReaderUsageDescription": "This app uses NFC to interact with physical crypto cards",
-        "NSCameraUsageDescription": "This app uses the camera to scan QR codes"
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#3B82F6"
-      },
-      "package": "com.wallet.nfccrypto",
-      "permissions": [
-        "NFC",
-        "CAMERA"
-      ]
+      "supportsTablet": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      [
-        "expo-file-system"
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermissionText": "This app needs access to your camera to scan QR codes."
-        }
-      ],
-      [
-        "react-native-nfc-manager",
-        {
-          "nfcPermission": "This app uses NFC to interact with physical crypto cards.",
-          "includesNdefMesages": true
-        }
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id-here"
-      }
+    "plugins": ["expo-router", "expo-font", "expo-web-browser"],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
