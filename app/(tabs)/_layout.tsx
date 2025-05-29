@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
-import { Wallet, ChartLine as ChartLineUp, BellRing, Settings } from 'lucide-react-native';
+import { Wallet, CreditCard, ChartLine, BellRing, Settings } from 'lucide-react-native';
 import TabBarIcon from '@/components/navigation/TabBarIcon';
 
 export default function TabLayout() {
@@ -29,18 +29,27 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Wallet',
+          title: 'Home',
           tabBarIcon: ({ color, size }) => (
             <TabBarIcon icon={Wallet} color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="markets"
+        name="cards"
         options={{
-          title: 'Markets',
+          title: 'Cards',
           tabBarIcon: ({ color, size }) => (
-            <TabBarIcon icon={ChartLineUp} color={color} size={size} />
+            <TabBarIcon icon={CreditCard} color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color, size }) => (
+            <TabBarIcon icon={ChartLine} color={color} size={size} />
           ),
         }}
       />

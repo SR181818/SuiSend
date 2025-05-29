@@ -1,197 +1,140 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
-import { ArrowUpRight, ArrowDownLeft, Plus, QrCode, Send, Scan } from 'lucide-react-native';
-import CryptoCard from '@/components/wallet/CryptoCard';
-import PortfolioChart from '@/components/wallet/PortfolioChart';
-import TransactionItem from '@/components/wallet/TransactionItem';
-import ActionButton from '@/components/common/ActionButton';
-import { mockTransactions } from '@/utils/mockData';
+import { Scan, Send, QrCode, Plus, Wallet } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { formatCurrency } from '@/utils/formatters';
+import PaymentCard from '@/components/cards/PaymentCard';
+import TransactionItem from '@/components/transactions/TransactionItem';
+import ActionButton from '@/components/common/ActionButton';
+import useNfcPayment from '@/hooks/useNfcPayment';
 
-export default function WalletScreen() {
+export default function HomeScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { walletInfo, balances, refreshWallet } = useWallet();
+  const { balance, cards, recentTransactions } = useWallet();
+  const { isNfcSupported, isScanning, startNfcPayment } = useNfcPayment();
   
-  const [refreshing, setRefreshing] = useState(false);
-  const [timeRange, setTimeRange] = useState<'1d' | '1w' | '1m' | '1y'>('1w');
-  
-  // Calculate total balance
-  const totalBalance = Object.values(balances).reduce(
-    (sum, { balanceUsd }) => sum + balanceUsd, 
-    0
-  );
-  
-  // Filter transactions to show only the most recent
-  const recentTransactions = mockTransactions.slice(0, 5);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await refreshWallet();
-    } catch (error) {
-      console.error('Error refreshing wallet:', error);
-    } finally {
-      setRefreshing(false);
+  const handleScan = async () => {
+    if (Platform.OS === 'web') {
+      // Show web alternative
+      alert('NFC payments are only available on mobile devices');
+      return;
     }
+    
+    if (!isNfcSupported) {
+      alert('NFC is not supported on this device');
+      return;
+    }
+    
+    await startNfcPayment();
   };
 
   const handleSend = () => {
-    // Navigate to send screen (to be implemented)
-    console.log('Navigate to send screen');
+    router.push('/send');
   };
 
   const handleReceive = () => {
-    // Navigate to receive screen (to be implemented)
-    console.log('Navigate to receive screen');
+    router.push('/receive');
   };
-
-  const handleBuy = () => {
-    // Navigate to buy screen (to be implemented)
-    console.log('Navigate to buy screen');
-  };
-
-  const handleScan = () => {
-    // Navigate to scan screen (to be implemented)
-    console.log('Navigate to scan screen');
-  };
-
-  const timeRangeOptions: Array<'1d' | '1w' | '1m' | '1y'> = ['1d', '1w', '1m', '1y'];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={theme.colors.primary}
-          />
-        }
-      >
+      <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={[styles.welcomeText, { color: theme.colors.textSecondary }]}>
               Welcome back
             </Text>
-            <Text style={[styles.walletName, { color: theme.colors.text }]}>
-              {walletInfo.name || 'My Wallet'}
+            <Text style={[styles.balanceLabel, { color: theme.colors.text }]}>
+              Total Balance
+            </Text>
+            <Text style={[styles.balanceAmount, { color: theme.colors.text }]}>
+              {formatCurrency(balance)}
             </Text>
           </View>
-          <TouchableOpacity 
-            style={[styles.scanButton, { backgroundColor: theme.colors.backgroundLight }]}
-            onPress={handleScan}
-          >
-            <Scan color={theme.colors.primary} size={20} />
-          </TouchableOpacity>
         </View>
 
-        {/* Portfolio Value */}
-        <Animated.View 
-          entering={FadeInDown.delay(100).springify()}
-          style={styles.portfolioContainer}
-        >
-          <Text style={[styles.portfolioLabel, { color: theme.colors.textSecondary }]}>
-            Portfolio Value
-          </Text>
-          <Text style={[styles.portfolioValue, { color: theme.colors.text }]}>
-            {formatCurrency(totalBalance)}
-          </Text>
-          <Text style={[styles.portfolioChange, { 
-            color: totalBalance > 0 ? theme.colors.success : theme.colors.error 
-          }]}>
-            {totalBalance > 0 ? '+' : ''}{formatCurrency(totalBalance * 0.03)} (3.0%)
-          </Text>
-          
-          {/* Chart Time Range Selector */}
-          <View style={styles.timeRangeSelector}>
-            {timeRangeOptions.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.timeRangeButton,
-                  timeRange === option && { backgroundColor: theme.colors.primary + '20' }
-                ]}
-                onPress={() => setTimeRange(option)}
-              >
-                <Text
-                  style={[
-                    styles.timeRangeButtonText,
-                    { color: timeRange === option ? theme.colors.primary : theme.colors.textSecondary }
-                  ]}
-                >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          
-          {/* Portfolio Chart */}
-          <PortfolioChart timeRange={timeRange} />
-        </Animated.View>
-
-        {/* Action Buttons */}
+        {/* Quick Actions */}
         <View style={styles.actionsContainer}>
           <ActionButton
-            icon={<Send color={theme.colors.white} size={20} />}
-            label="Send"
-            onPress={handleSend}
+            icon={<Scan color={theme.colors.white} size={24} />}
+            label="Pay"
+            onPress={handleScan}
             backgroundColor={theme.colors.primary}
+            isLoading={isScanning}
           />
           <ActionButton
-            icon={<QrCode color={theme.colors.white} size={20} />}
-            label="Receive"
-            onPress={handleReceive}
+            icon={<Send color={theme.colors.white} size={24} />}
+            label="Send"
+            onPress={handleSend}
             backgroundColor={theme.colors.secondary}
           />
           <ActionButton
-            icon={<Plus color={theme.colors.white} size={20} />}
-            label="Buy"
-            onPress={handleBuy}
+            icon={<QrCode color={theme.colors.white} size={24} />}
+            label="Receive"
+            onPress={handleReceive}
             backgroundColor={theme.colors.accent}
           />
         </View>
 
-        {/* Assets List */}
-        <View style={styles.assetsContainer}>
+        {/* Cards Section */}
+        <View style={styles.cardsSection}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Your Assets</Text>
-            <TouchableOpacity>
-              <Text style={[styles.seeAllButton, { color: theme.colors.primary }]}>See All</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Your Cards
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/cards')}>
+              <Text style={[styles.seeAllButton, { color: theme.colors.primary }]}>
+                See All
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.cryptoCards}>
-            {Object.entries(balances).map(([symbol, data], index) => (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cardsContainer}
+          >
+            {cards.map((card, index) => (
               <Animated.View 
-                key={symbol}
-                entering={FadeInDown.delay(200 + index * 100).springify()}
+                key={card.id}
+                entering={FadeInDown.delay(index * 100)}
               >
-                <CryptoCard
-                  symbol={symbol}
-                  name={data.name}
-                  balance={data.balance}
-                  balanceUsd={data.balanceUsd}
-                  priceChangePercentage={data.priceChangePercentage}
-                />
+                <PaymentCard card={card} />
               </Animated.View>
             ))}
-          </View>
+            
+            <TouchableOpacity
+              style={[
+                styles.addCardButton,
+                { backgroundColor: theme.colors.backgroundLight }
+              ]}
+              onPress={() => router.push('/cards/add')}
+            >
+              <Plus color={theme.colors.primary} size={24} />
+              <Text style={[styles.addCardText, { color: theme.colors.primary }]}>
+                Add Card
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
 
         {/* Recent Transactions */}
-        <View style={styles.transactionsContainer}>
+        <View style={styles.transactionsSection}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Recent Transactions</Text>
-            <TouchableOpacity>
-              <Text style={[styles.seeAllButton, { color: theme.colors.primary }]}>See All</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Recent Transactions
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/transactions')}>
+              <Text style={[styles.seeAllButton, { color: theme.colors.primary }]}>
+                See All
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -199,16 +142,9 @@ export default function WalletScreen() {
             {recentTransactions.map((transaction, index) => (
               <Animated.View 
                 key={transaction.id}
-                entering={FadeInDown.delay(400 + index * 100).springify()}
+                entering={FadeInDown.delay(200 + index * 100)}
               >
-                <TransactionItem
-                  type={transaction.type}
-                  amount={transaction.amount}
-                  symbol={transaction.symbol}
-                  date={transaction.date}
-                  status={transaction.status}
-                  address={transaction.address}
-                />
+                <TransactionItem transaction={transaction} />
               </Animated.View>
             ))}
           </View>
@@ -226,78 +162,37 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    padding: 24,
   },
   welcomeText: {
     fontFamily: 'Inter-Regular',
     fontSize: 14,
+    marginBottom: 8,
   },
-  walletName: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 20,
-  },
-  scanButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  portfolioContainer: {
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
-  },
-  portfolioLabel: {
+  balanceLabel: {
     fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 4,
   },
-  portfolioValue: {
+  balanceAmount: {
     fontFamily: 'Inter-Bold',
     fontSize: 32,
-    marginBottom: 4,
-  },
-  portfolioChange: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  timeRangeSelector: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  timeRangeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-  },
-  timeRangeButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
   },
   actionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginVertical: 16,
+    justifyContent: 'space-around',
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
-  assetsContainer: {
+  cardsSection: {
     marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontFamily: 'Inter-SemiBold',
@@ -307,15 +202,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 14,
   },
-  cryptoCards: {
-    paddingHorizontal: 16,
-    gap: 12,
+  cardsContainer: {
+    paddingHorizontal: 24,
+    gap: 16,
   },
-  transactionsContainer: {
+  addCardButton: {
+    width: 100,
+    height: 160,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addCardText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  transactionsSection: {
     marginBottom: 24,
   },
   transactionsList: {
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: 24,
+    gap: 12,
   },
 });

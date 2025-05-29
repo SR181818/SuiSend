@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { createWalletFromMnemonic, createWalletFromPrivateKey } from '@/utils/cryptoUtils';
-import { mockBalances } from '@/utils/mockData';
+import { createUser, getTransactions, createTransaction } from '@/utils/api';
 
 interface WalletInfo {
   address: string;
@@ -39,26 +40,45 @@ const WalletContext = createContext<WalletContextType>({
 
 export const useWallet = () => useContext(WalletContext);
 
+// Platform-specific storage helper functions
+const storeData = async (key: string, value: string) => {
+  if (Platform.OS === 'web') {
+    await AsyncStorage.setItem(key, value);
+  } else {
+    await SecureStore.setItemAsync(key, value);
+  }
+};
+
+const getData = async (key: string): Promise<string | null> => {
+  if (Platform.OS === 'web') {
+    return await AsyncStorage.getItem(key);
+  } else {
+    return await SecureStore.getItemAsync(key);
+  }
+};
+
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [walletInfo, setWalletInfo] = useState<WalletInfo>({ address: '', name: '' });
   const [balances, setBalances] = useState<Balances>({});
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadWallet = async () => {
       try {
-        // In a real app, we would decrypt the wallet from secure storage
-        const encryptedWallet = await SecureStore.getItemAsync('wallet_data');
+        const walletData = await getData('wallet_data');
+        const storedUserId = await getData('user_id');
         
-        if (encryptedWallet) {
-          // Simulating decryption and loading of wallet data
-          const walletData = JSON.parse(encryptedWallet);
+        if (walletData) {
+          const parsedWallet = JSON.parse(walletData);
           setWalletInfo({
-            address: walletData.address || '',
-            name: walletData.name || 'My Wallet',
+            address: parsedWallet.address || '',
+            name: parsedWallet.name || 'My Wallet',
           });
           
-          // Load balances (in a real app, this would be from an API)
-          setBalances(mockBalances);
+          if (storedUserId) {
+            setUserId(storedUserId);
+            await refreshWallet();
+          }
         }
       } catch (error) {
         console.error('Error loading wallet:', error);
@@ -70,16 +90,18 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const createWallet = async (mnemonic: string) => {
     try {
-      // Generate wallet from mnemonic
       const { address, privateKey } = await createWalletFromMnemonic(mnemonic);
       
-      // Create wallet info
+      // Create user in backend
+      const user = await createUser(address);
+      await storeData('user_id', user.id.toString());
+      setUserId(user.id.toString());
+      
       const newWalletInfo = {
         address,
         name: 'My Wallet',
       };
       
-      // In a real app, we would encrypt the private key and mnemonic
       const walletData = {
         address,
         privateKey,
@@ -87,12 +109,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: 'My Wallet',
       };
       
-      // Save wallet data
-      await SecureStore.setItemAsync('wallet_data', JSON.stringify(walletData));
-      
-      // Update state
+      await storeData('wallet_data', JSON.stringify(walletData));
       setWalletInfo(newWalletInfo);
-      setBalances(mockBalances);
+      
+      await refreshWallet();
     } catch (error) {
       console.error('Error creating wallet:', error);
       throw error;
@@ -114,13 +134,16 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         privateKey = value;
       }
       
-      // Create wallet info
+      // Create user in backend
+      const user = await createUser(address);
+      await storeData('user_id', user.id.toString());
+      setUserId(user.id.toString());
+      
       const newWalletInfo = {
         address,
         name: 'My Wallet',
       };
       
-      // In a real app, we would encrypt the private key and mnemonic
       const walletData = {
         address,
         privateKey,
@@ -128,12 +151,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: 'My Wallet',
       };
       
-      // Save wallet data
-      await SecureStore.setItemAsync('wallet_data', JSON.stringify(walletData));
-      
-      // Update state
+      await storeData('wallet_data', JSON.stringify(walletData));
       setWalletInfo(newWalletInfo);
-      setBalances(mockBalances);
+      
+      await refreshWallet();
     } catch (error) {
       console.error('Error importing wallet:', error);
       throw error;
@@ -141,13 +162,34 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const refreshWallet = async () => {
+    if (!userId) return;
+    
     try {
-      // In a real app, this would fetch balances from an API
-      // Simulating API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Fetch real transactions from backend
+      const transactions = await getTransactions(userId);
       
-      // Update balances with mock data
-      setBalances(mockBalances);
+      // Calculate balances from transactions
+      const newBalances: Balances = {};
+      transactions.forEach((tx: any) => {
+        const { symbol, amount, type } = tx.transaction_data;
+        if (!newBalances[symbol]) {
+          newBalances[symbol] = {
+            name: symbol,
+            symbol,
+            balance: 0,
+            balanceUsd: 0,
+            priceChangePercentage: 0,
+          };
+        }
+        
+        if (type === 'received') {
+          newBalances[symbol].balance += amount;
+        } else if (type === 'sent') {
+          newBalances[symbol].balance -= amount;
+        }
+      });
+      
+      setBalances(newBalances);
     } catch (error) {
       console.error('Error refreshing wallet:', error);
       throw error;

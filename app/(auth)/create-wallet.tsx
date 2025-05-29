@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Copy, RefreshCw, Lock } from 'lucide-react-native';
@@ -100,7 +100,7 @@ export default function CreateWalletScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => router.back()}
@@ -112,7 +112,7 @@ export default function CreateWalletScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <View style={styles.mnemonicSection}>
           <View style={styles.mnemonicHeader}>
             <Text style={[styles.mnemonicTitle, { color: theme.colors.text }]}>
@@ -177,7 +177,7 @@ export default function CreateWalletScreen() {
             theme={theme}
           />
         </View>
-      </View>
+      </ScrollView>
 
       <View style={styles.footer}>
         <LinearGradientButton
@@ -227,7 +227,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 16,
+    paddingBottom: 32,
   },
   mnemonicSection: {
     marginBottom: 24,
