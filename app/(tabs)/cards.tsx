@@ -13,9 +13,13 @@ export default function CardsScreen() {
 
   const handleSetCardType = (type: 'sender' | 'receiver') => {
     setCardType(type);
+    const explanation = type === 'sender' 
+      ? 'This device now acts like a Mastercard/Visa card. When someone taps it, money will be sent FROM your wallet TO theirs. Perfect for making payments.'
+      : 'This device now acts like a POS terminal. When someone taps it, money will be pulled FROM their wallet TO yours. Perfect for receiving payments.';
+    
     Alert.alert(
-      'Card Type Set',
-      `This device will now act as a ${type} card when tapped.`
+      `${type.charAt(0).toUpperCase() + type.slice(1)} Card Mode Active`,
+      explanation
     );
   };
 

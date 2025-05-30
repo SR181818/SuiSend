@@ -28,9 +28,13 @@ export default function HomeScreen() {
   const handleCardTypeSelection = async (type: 'sender' | 'receiver') => {
     try {
       await setCardType(type);
+      const description = type === 'sender' 
+        ? 'Your device now acts like a debit/credit card. When tapped, it will send money from your wallet.'
+        : 'Your device now acts like a POS terminal. When tapped, it will receive money into your wallet.';
+      
       Alert.alert(
-        'Card Type Set', 
-        `Your device is now configured as a ${type} card. You can now tap NFC cards to ${type === 'sender' ? 'send payments' : 'receive payments'}.`
+        `${type.charAt(0).toUpperCase() + type.slice(1)} Card Active`, 
+        description
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to set card type');
@@ -54,21 +58,8 @@ export default function HomeScreen() {
     }
 
     try {
-      // Mock NFC card data - in real implementation this would come from NFC scan
-      const mockCardData = {
-        id: 'card_123',
-        address: '0x1234567890abcdef',
-        type: walletInfo.cardType === 'sender' ? 'receiver' : 'sender'
-      };
-
-      const amount = 10; // Mock amount - in real app this would be input by user
-      await processNfcTransaction(mockCardData, amount);
-      
-      const statusMessage = isOnlineMode && walletInfo.isOnline 
-        ? 'Transaction completed successfully!' 
-        : 'Transaction queued for when device goes online';
-        
-      Alert.alert('Transaction Processed', statusMessage);
+      const amount = 10; // In real app, this would be user input
+      await startNfcPayment(amount);
     } catch (error) {
       Alert.alert('Transaction Failed', 'Failed to process NFC transaction');
     }
