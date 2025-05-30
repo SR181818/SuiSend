@@ -1,0 +1,22 @@
+Running application "main" with appParams:
+ 
+Object {rootTag: "#root", hydrate: undefined}
+ 
+Development-level warnings: ON.
+Performance optimizations: OFF.
+"shadow*" style props are deprecated. Use "boxShadow".
+[Reanimated] Reduced motion setting is enabled on this device. This warning is visible only in the development mode. Some animations will be disabled by default. You can override the behavior for individual animations, see https://docs.swmansion.com/react-native-reanimated/docs/guides/troubleshooting#reduced-motion-setting-is-enabled-on-this-device.
+Error loading wallet data: 
+TypeError {}
+
+at t.value (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+props.pointerEvents is deprecated. Use style.pointerEvents
+React.jsx: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+<div class="luna-console-preview" data-id="36"><div class="luna-console-preview-container"><div class="luna-console-preview-icon-container"><span class="luna-console-icon luna-console-icon-caret-right"></span></div><span class="luna-console-preview-content-container"><span class="luna-console-descriptor">Error</span> <span class="luna-console-object-preview">{<span class="luna-console-key">componentStack</span>: <span class="luna-console-string">&quot;↵    at div (&lt;anonymous&gt;)↵    at View…&quot;</span>}</span></span></div><div class="luna-console-json luna-console-hidden"></div></div>
+
+The above error occurred in the <div> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, LogBoxStateSubscription.
