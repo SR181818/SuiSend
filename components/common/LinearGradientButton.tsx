@@ -6,46 +6,54 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface LinearGradientButtonProps {
   title: string;
   onPress: () => void;
-  isLoading?: boolean;
-  disabled?: boolean;
-  icon?: React.ReactNode;
-  colors?: string[];
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'danger';
   size?: 'small' | 'medium' | 'large';
+  disabled?: boolean;
+  isLoading?: boolean;
+  icon?: React.ReactNode;
 }
 
-const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
+export default function LinearGradientButton({
   title,
   onPress,
-  isLoading = false,
-  disabled = false,
-  icon,
-  colors = ['#6366f1', '#8b5cf6'],
   variant = 'primary',
   size = 'medium',
-}) => {
+  disabled = false,
+  isLoading = false,
+  icon,
+}: LinearGradientButtonProps) {
   const getButtonColors = () => {
-    if (disabled) return ['#9ca3af', '#6b7280'];
-    if (variant === 'secondary') return ['#374151', '#4b5563'];
-    return colors;
+    if (disabled) return ['#9CA3AF', '#6B7280'];
+    
+    switch (variant) {
+      case 'primary':
+        return ['#3B82F6', '#1D4ED8'];
+      case 'secondary':
+        return ['#6B7280', '#374151'];
+      case 'danger':
+        return ['#EF4444', '#DC2626'];
+      default:
+        return ['#3B82F6', '#1D4ED8'];
+    }
   };
 
   const getButtonSize = () => {
     switch (size) {
       case 'small':
-        return styles.small;
+        return { height: 36, paddingHorizontal: 16 };
+      case 'medium':
+        return { height: 44, paddingHorizontal: 20 };
       case 'large':
-        return styles.large;
+        return { height: 52, paddingHorizontal: 24 };
       default:
-        return styles.medium;
+        return { height: 44, paddingHorizontal: 20 };
     }
   };
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={disabled || isLoading ? undefined : onPress}
       disabled={disabled || isLoading}
-      style={[styles.container, getButtonSize()]}
       activeOpacity={0.8}
     >
       <LinearGradient
@@ -67,22 +75,19 @@ const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
       </LinearGradient>
     </TouchableOpacity>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
   gradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   contentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   iconContainer: {
     marginRight: 8,
@@ -96,18 +101,4 @@ const styles = StyleSheet.create({
   smallText: {
     fontSize: 14,
   },
-  small: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  medium: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  large: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
 });
-
-export default LinearGradientButton;

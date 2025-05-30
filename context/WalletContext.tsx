@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -41,32 +40,32 @@ interface WalletContextType {
   // Wallet state
   wallet: WalletInfo | null;
   isLoading: boolean;
-  
+
   // Card mode management
   cardMode: CardMode;
   setCardMode: (mode: CardMode) => void;
-  
+
   // App mode management
   appMode: AppMode;
   setAppMode: (mode: AppMode) => void;
-  
+
   // Pending transactions (offline queue)
   pendingTransactions: PendingTransaction[];
-  
+
   // NFC operations
   startNfcListening: () => Promise<void>;
   stopNfcListening: () => void;
   performNfcTransaction: (amount: number, recipientCard?: string) => Promise<void>;
-  
+
   // Transaction management
   processPendingTransactions: () => Promise<void>;
   createOfflineTransaction: (transaction: NFCTransaction) => void;
-  
+
   // Wallet operations
   createWallet: (mnemonic?: string) => Promise<void>;
   importWallet: (privateKey: string) => Promise<void>;
   clearWallet: () => Promise<void>;
-  
+
   // Connection status
   isOnline: boolean;
 }
@@ -96,10 +95,28 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   // Load saved settings on app start
   useEffect(() => {
-    loadWalletData();
-    loadAppSettings();
-    loadPendingTransactions();
-    checkNetworkStatus();
+    let mounted = true;
+
+    const initializeWallet = async () => {
+      if (mounted) {
+        await loadWalletData();
+        await checkNetworkStatus();
+      }
+    };
+
+    initializeWallet();
+
+    // Set up periodic network checks
+    const interval = setInterval(() => {
+      if (mounted) {
+        checkNetworkStatus();
+      }
+    }, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Monitor network status
@@ -120,12 +137,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       // Simple network check
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
+
       const response = await fetch('https://httpbin.org/status/200', {
         method: 'HEAD',
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       setIsOnline(response.ok);
       if (response.ok && appMode === 'offline') {
@@ -143,12 +160,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const loadWalletData = async () => {
     try {
+      setIsLoading(true);
+      // Load wallet from secure storage
       const storedWallet = await SecureStore.getItemAsync('wallet_data');
       if (storedWallet) {
         setWallet(JSON.parse(storedWallet));
       }
     } catch (error) {
       console.error('Error loading wallet data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -215,7 +236,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         appMode: 'online',
         balance: 0,
       };
-      
+
       setWallet(newWallet);
       await SecureStore.setItemAsync('wallet_data', JSON.stringify(newWallet));
       await SecureStore.setItemAsync('private_key', walletData.privateKey);
@@ -239,7 +260,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         appMode: 'online',
         balance: 0,
       };
-      
+
       setWallet(newWallet);
       await SecureStore.setItemAsync('wallet_data', JSON.stringify(newWallet));
       await SecureStore.setItemAsync('private_key', privateKey);
@@ -270,7 +291,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       await NfcManager.start();
       setIsNfcListening(true);
-      
+
       // Start listening for NFC tags
       NfcManager.registerTagEvent((tag) => {
         handleNfcTagDetected(tag);
@@ -292,7 +313,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       // Parse NFC data (you'll need to implement this based on your NFC data format)
       const nfcData = parseNfcData(tag);
-      
+
       if (cardMode === 'sender') {
         // Sender card: Push money (like Mastercard/Visa)
         await handleSenderTransaction(nfcData);
@@ -357,10 +378,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Sign transaction offline using Sui client
       const signedTransaction = await signTransactionOffline(transaction, privateKey);
-      
+
       // Submit to network
       const result = await submitTransaction(signedTransaction);
-      
+
       console.log('Transaction completed:', result);
     } catch (error) {
       console.error('Error processing online transaction:', error);
@@ -428,7 +449,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const processedTransactions: PendingTransaction[] = [];
-      
+
       for (const pendingTx of pendingTransactions) {
         try {
           const transaction: NFCTransaction = {
@@ -437,7 +458,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             toCard: pendingTx.to || '',
             timestamp: pendingTx.timestamp,
           };
-          
+
           await processOnlineTransaction(transaction);
           processedTransactions.push({ ...pendingTx, status: 'completed' });
         } catch (error) {
