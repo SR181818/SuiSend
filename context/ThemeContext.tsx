@@ -1,28 +1,4 @@
-
-<old_str>import React, { createContext, useContext, ReactNode } from 'react';
-
-interface Theme {
-  primary: string;
-  background: string;
-  text: string;
-  secondary: string;
-  accent: string;
-}
-
-const lightTheme: Theme = {
-  primary: '#007AFF',
-  background: '#FFFFFF',
-  text: '#000000',
-  secondary: '#6b7280',
-  accent: '#6366f1',
-};
-
-interface ThemeContextType {
-  theme: Theme;
-}
-
-co</old_str>
-<new_str>import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 
 interface Theme {
   primary: string;
@@ -39,6 +15,7 @@ interface Theme {
     success: string;
     error: string;
     border: string;
+    surface: string;
   };
 }
 
@@ -57,6 +34,7 @@ const lightTheme: Theme = {
     success: '#28a745',
     error: '#dc3545',
     border: '#E5E5E5',
+    surface: '#F8F9FA',
   },
 };
 
@@ -84,4 +62,4 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-};</new_str>
+};
