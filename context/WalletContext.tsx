@@ -95,42 +95,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   // Load saved settings on app start
   useEffect(() => {
-    let isMounted = true;
-
-    const initializeWallet = async () => {
-      if (isMounted) {
-        await loadWalletData();
-        await checkNetworkStatus();
-      }
-    };
-
-    initializeWallet();
-
-    // Set up periodic network checks
-    const networkInterval = setInterval(() => {
-      if (isMounted) {
-        checkNetworkStatus();
-      }
-    }, 30000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(networkInterval);
-    };
+    loadWalletData();
+    checkNetworkStatus();
   }, []);
 
   // Monitor network status
   useEffect(() => {
-    const interval = setInterval(checkNetworkStatus, 5000);
+    const interval = setInterval(checkNetworkStatus, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  // Process pending transactions when coming online
-  useEffect(() => {
-    if (isOnline && pendingTransactions.length > 0) {
-      processPendingTransactions();
-    }
-  }, [isOnline]);
 
   const checkNetworkStatus = async () => {
     try {

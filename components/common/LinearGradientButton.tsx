@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,25 +8,25 @@ interface LinearGradientButtonProps {
   onPress: () => void;
   colors?: string[];
   icon?: React.ReactNode;
-  disabled?: boolean;
   loading?: boolean;
+  disabled?: boolean;
   style?: any;
 }
 
-export default function LinearGradientButton({
+const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
   title,
   onPress,
-  colors = ['#6366f1', '#8b5cf6'],
+  colors = ['#6366f1', '#4f46e5'],
   icon,
-  disabled = false,
   loading = false,
+  disabled = false,
   style,
-}: LinearGradientButtonProps) {
+}) => {
   return (
     <TouchableOpacity
-      style={[styles.container, style]}
       onPress={onPress}
       disabled={disabled || loading}
+      style={[styles.container, style]}
       activeOpacity={0.8}
     >
       <LinearGradient
@@ -40,19 +41,20 @@ export default function LinearGradientButton({
           ) : (
             <>
               {icon && <View style={styles.iconContainer}>{icon}</View>}
-              <Text style={styles.title}>{title}</Text>
+              <Text style={styles.text}>{title}</Text>
             </>
           )}
         </View>
       </LinearGradient>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     overflow: 'hidden',
+    marginVertical: 4,
   },
   gradient: {
     paddingVertical: 16,
@@ -66,10 +68,12 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginRight: 8,
   },
-  title: {
+  text: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
   },
 });
+
+export default LinearGradientButton;
