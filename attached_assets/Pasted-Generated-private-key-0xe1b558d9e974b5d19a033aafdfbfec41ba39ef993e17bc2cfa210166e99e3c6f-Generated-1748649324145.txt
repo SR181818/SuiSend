@@ -1,0 +1,21 @@
+Generated private key: 0xe1b558d9e974b5d19a033aafdfbfec41ba39ef993e17bc2cfa210166e99e3c6f
+Generated address: 0x1e0edcb893495b038a538940ad9b6d5bfb8b85dd
+Error creating wallet: 
+TypeError {}
+message: "_ExpoSecureStore.default.setValueWithKeyAsync is not a function"
+stack: "TypeError: _ExpoSecureStore.default.setValueWithKeyAsync is not a function↵ at Object.setItemAsync (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203932:36)↵ at createWallet (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203563:27)↵ at async handleCreateWallet (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203037:9)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error creating wallet: 
+TypeError {}
+message: "_ExpoSecureStore.default.setValueWithKeyAsync is not a function"
+stack: "TypeError: _ExpoSecureStore.default.setValueWithKeyAsync is not a function↵ at Object.setItemAsync (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203932:36)↵ at createWallet (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203563:27)↵ at async handleCreateWallet (https://f793528c-fcee-46e6-8fab-c4963bf2e364-00-2s6ae1tb8ml56.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203037:9)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
