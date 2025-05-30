@@ -5,7 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { createWalletFromMnemonic, createWalletFromPrivateKey } from '@/utils/cryptoUtils';
 import NfcManager from '@/services/NfcManager';
-import { createUser, createTransaction, getTransactions } from '@/utils/api';
 
 export type CardMode = 'sender' | 'receiver' | null;
 export type AppMode = 'online' | 'offline';
@@ -118,11 +117,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const checkNetworkStatus = async () => {
     try {
-      // Simple network check - you might want to replace with actual connectivity check
+      // Simple network check
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch('https://httpbin.org/status/200', {
         method: 'HEAD',
-        timeout: 5000,
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
       setIsOnline(response.ok);
       if (response.ok && appMode === 'offline') {
         // Auto switch to online if network is available
