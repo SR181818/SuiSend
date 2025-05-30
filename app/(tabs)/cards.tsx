@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
 import { CreditCard, Smartphone, Wifi, WifiOff } from 'lucide-react-native';
-import { LinearGradientButton } from '@/components/common/LinearGradientButton';
+import LinearGradientButton from '@/components/common/LinearGradientButton';
 
 export default function CardsScreen() {
   const { theme } = useTheme();
