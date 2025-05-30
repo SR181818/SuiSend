@@ -2,6 +2,10 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import React from 'react';
+import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+
 interface LinearGradientButtonProps {
   onPress: () => void;
   disabled?: boolean;
@@ -32,7 +36,7 @@ const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
         end={{ x: 1, y: 1 }}
       >
         {isLoading ? (
-          <ActivityIndicator color="white\" size="small" />
+          <ActivityIndicator color="white" size="small" />
         ) : (
           <View style={styles.contentContainer}>
             {icon && <View style={styles.iconContainer}>{icon}</View>}
