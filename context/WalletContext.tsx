@@ -165,6 +165,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         const walletData = await AsyncStorage.getItem('wallet_data');
         if (walletData) {
           const parsedWallet = JSON.parse(walletData);
+          // Ensure balance is always a number
+          if (typeof parsedWallet.balance !== 'number') {
+            parsedWallet.balance = 0;
+          }
           setWallet(parsedWallet);
         }
       } else {
@@ -172,6 +176,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         const walletData = await SecureStore.getItemAsync('wallet_data');
         if (walletData) {
           const parsedWallet = JSON.parse(walletData);
+          // Ensure balance is always a number
+          if (typeof parsedWallet.balance !== 'number') {
+            parsedWallet.balance = 0;
+          }
           setWallet(parsedWallet);
         }
       }

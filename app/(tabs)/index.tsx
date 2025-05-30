@@ -104,7 +104,7 @@ export default function HomeScreen() {
           {wallet.address.slice(0, 16)}...{wallet.address.slice(-8)}
         </Text>
         <Text style={[styles.balance, { color: theme.text }]}>
-          {wallet.balance.toFixed(4)} SUI
+          {(wallet.balance || 0).toFixed(4)} SUI
         </Text>
       </View>
 
