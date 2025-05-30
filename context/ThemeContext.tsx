@@ -1,19 +1,63 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+
+<old_str>import React, { createContext, useContext, ReactNode } from 'react';
 
 interface Theme {
+  primary: string;
   background: string;
-  surface: string;
   text: string;
-  textSecondary: string;
+  secondary: string;
   accent: string;
 }
 
 const lightTheme: Theme = {
-  background: '#ffffff',
-  surface: '#f8fafc',
-  text: '#1f2937',
-  textSecondary: '#6b7280',
+  primary: '#007AFF',
+  background: '#FFFFFF',
+  text: '#000000',
+  secondary: '#6b7280',
   accent: '#6366f1',
+};
+
+interface ThemeContextType {
+  theme: Theme;
+}
+
+co</old_str>
+<new_str>import React, { createContext, useContext, ReactNode } from 'react';
+
+interface Theme {
+  primary: string;
+  background: string;
+  text: string;
+  secondary: string;
+  accent: string;
+  colors: {
+    primary: string;
+    background: string;
+    backgroundLight: string;
+    text: string;
+    textSecondary: string;
+    success: string;
+    error: string;
+    border: string;
+  };
+}
+
+const lightTheme: Theme = {
+  primary: '#007AFF',
+  background: '#FFFFFF',
+  text: '#000000',
+  secondary: '#6b7280',
+  accent: '#6366f1',
+  colors: {
+    primary: '#007AFF',
+    background: '#FFFFFF',
+    backgroundLight: '#F8F9FA',
+    text: '#000000',
+    textSecondary: '#6b7280',
+    success: '#28a745',
+    error: '#dc3545',
+    border: '#E5E5E5',
+  },
 };
 
 interface ThemeContextType {
@@ -40,4 +84,4 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-};
+};</new_str>

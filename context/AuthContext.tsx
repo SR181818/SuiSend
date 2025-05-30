@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(value);
   };
 
-  const setHasWallet = (value: boolean) => {
+  const setHasWalletValue = (value: boolean) => {
     setHasWallet(value);
   };
 
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     hasWallet,
     setAuthenticated,
-    setHasWallet,
+    setHasWallet: setHasWalletValue,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
