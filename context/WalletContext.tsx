@@ -95,10 +95,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   // Load saved settings on app start
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
     const initializeWallet = async () => {
-      if (mounted) {
+      if (isMounted) {
         await loadWalletData();
         await checkNetworkStatus();
       }
@@ -107,15 +107,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     initializeWallet();
 
     // Set up periodic network checks
-    const interval = setInterval(() => {
-      if (mounted) {
+    const networkInterval = setInterval(() => {
+      if (isMounted) {
         checkNetworkStatus();
       }
     }, 30000);
 
     return () => {
-      mounted = false;
-      clearInterval(interval);
+      isMounted = false;
+      clearInterval(networkInterval);
     };
   }, []);
 
@@ -160,16 +160,24 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const loadWalletData = async () => {
     try {
-      setIsLoading(true);
-      // Load wallet from secure storage
-      const storedWallet = await SecureStore.getItemAsync('wallet_data');
-      if (storedWallet) {
-        setWallet(JSON.parse(storedWallet));
+      if (Platform.OS === 'web') {
+        // Use AsyncStorage for web
+        const walletData = await AsyncStorage.getItem('wallet_data');
+        if (walletData) {
+          const parsedWallet = JSON.parse(walletData);
+          setWallet(parsedWallet);
+        }
+      } else {
+        // Use SecureStore for native
+        const walletData = await SecureStore.getItemAsync('wallet_data');
+        if (walletData) {
+          const parsedWallet = JSON.parse(walletData);
+          setWallet(parsedWallet);
+        }
       }
     } catch (error) {
       console.error('Error loading wallet data:', error);
-    } finally {
-      setIsLoading(false);
+      // Don't set wallet to null on error, just log it
     }
   };
 
