@@ -1,9 +1,20 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+// Determine the API URL based on the platform and environment
+const getApiUrl = () => {
+  if (Platform.OS === 'web') {
+    // For web, use the current origin to avoid mixed content issues
+    const origin = window.location.origin;
+    return `${origin}/api`;
+  }
+  
+  // For native platforms, use the configured API URL
+  return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+};
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: getApiUrl(),
   headers: {
     'Content-Type': 'application/json',
   },

@@ -11,27 +11,19 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textTertiary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: theme.colors.backgroundDark,
-          borderTopWidth: 0,
-          elevation: 0,
-          height: 60,
-          paddingBottom: 8,
-        },
-        tabBarLabelStyle: {
-          fontFamily: 'Inter-Medium',
-          fontSize: 12,
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
         },
         headerShown: false,
-      }}
-    >
+      }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <TabBarIcon icon={Wallet} color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
           ),
         }}
       />
@@ -39,8 +31,8 @@ export default function TabLayout() {
         name="cards"
         options={{
           title: 'Cards',
-          tabBarIcon: ({ color, size }) => (
-            <TabBarIcon icon={CreditCard} color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'card' : 'card-outline'} color={color} />
           ),
         }}
       />
@@ -48,17 +40,26 @@ export default function TabLayout() {
         name="analytics"
         options={{
           title: 'Analytics',
-          tabBarIcon: ({ color, size }) => (
-            <TabBarIcon icon={ChartLine} color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'analytics' : 'analytics-outline'} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="markets"
+        options={{
+          title: 'Markets',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'trending-up' : 'trending-up-outline'} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: 'Alerts',
-          tabBarIcon: ({ color, size }) => (
-            <TabBarIcon icon={BellRing} color={color} size={size} />
+          title: 'Notifications',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'notifications' : 'notifications-outline'} color={color} />
           ),
         }}
       />
@@ -66,8 +67,8 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <TabBarIcon icon={Settings} color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={color} />
           ),
         }}
       />

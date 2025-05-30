@@ -1,0 +1,25 @@
+[Reanimated] Reduced motion setting is enabled on this device. This warning is visible only in the development mode. Some animations will be disabled by default. You can override the behavior for individual animations, see https://docs.swmansion.com/react-native-reanimated/docs/guides/troubleshooting#reduced-motion-setting-is-enabled-on-this-device.
+Error generating mnemonic: 
+Error {}
+message: "positive integer expected, got 149,243,75,156,13,50,149,61,142,61,210,95,139,217,180,25"
+stack: "Error: positive integer expected, got 149,243,75,156,13,50,149,61,142,61,210,95,139,217,180,25↵ at anumber (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:207206:50)↵ at generateMnemonic (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:206822:24)↵ at generateMnemonic (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:204611:40)↵ at async generateNewMnemonic (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203963:29)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error generating mnemonic: 
+Error {}
+message: "Failed to generate mnemonic"
+stack: "Error: Failed to generate mnemonic↵ at generateMnemonic (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:204614:13)↵ at async generateNewMnemonic (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:203963:29)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
+
+at t.value (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://75386987-95e9-4267-920a-f35399466d88-00-2w4r8la2ta0bm.sisko.replit.dev/__replco/static/devtools/erud

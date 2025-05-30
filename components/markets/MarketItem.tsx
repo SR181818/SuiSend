@@ -35,13 +35,13 @@ const MarketItem: React.FC<MarketItemProps> = ({
         <View style={[styles.iconContainer, { backgroundColor: theme.colors.backgroundLight }]}>
           <Text style={styles.symbolText}>{symbol.charAt(0)}</Text>
         </View>
-        
+
         <View style={styles.nameContainer}>
           <Text style={[styles.nameText, { color: theme.colors.text }]}>{name}</Text>
           <Text style={[styles.symbolText, { color: theme.colors.textSecondary }]}>{symbol}</Text>
         </View>
       </View>
-      
+
       <View style={styles.chartContainer}>
         <LineChart 
           data={chartData}
@@ -50,7 +50,7 @@ const MarketItem: React.FC<MarketItemProps> = ({
           color={isPositive ? theme.colors.success : theme.colors.error}
         />
       </View>
-      
+
       <View style={styles.rightContent}>
         <Text style={[styles.priceText, { color: theme.colors.text }]}>
           {formatCurrency(price)}
