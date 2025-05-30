@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,7 +23,7 @@ export default function LinearGradientButton({
 }: LinearGradientButtonProps) {
   const getButtonColors = () => {
     if (disabled) return ['#9CA3AF', '#6B7280'];
-    
+
     switch (variant) {
       case 'primary':
         return ['#3B82F6', '#1D4ED8'];
