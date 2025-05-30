@@ -84,6 +84,46 @@ interface WalletProviderProps {
   children: ReactNode;
 }
 
+// Storage utility function
+const setItemAsync = async (key: string, value: string) => {
+  try {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  } catch (error) {
+    console.error('Error saving data to storage:', error);
+  }
+};
+
+// Storage utility function
+const getItemAsync = async (key: string) => {
+  try {
+    if (Platform.OS === 'web') {
+      return await AsyncStorage.getItem(key);
+    } else {
+      return await SecureStore.getItemAsync(key);
+    }
+  } catch (error) {
+    console.error('Error loading data from storage:', error);
+    return null;
+  }
+};
+
+// Storage utility function
+const deleteItemAsync = async (key: string) => {
+  try {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  } catch (error) {
+    console.error('Error deleting data from storage:', error);
+  }
+};
+
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -133,28 +173,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const loadWalletData = async () => {
     try {
-      if (Platform.OS === 'web') {
-        // Use AsyncStorage for web
-        const walletData = await AsyncStorage.getItem('wallet_data');
-        if (walletData) {
-          const parsedWallet = JSON.parse(walletData);
-          // Ensure balance is always a number
-          if (typeof parsedWallet.balance !== 'number') {
-            parsedWallet.balance = 0;
-          }
-          setWallet(parsedWallet);
+      const walletData = await getItemAsync('wallet_data');
+      if (walletData) {
+        const parsedWallet = JSON.parse(walletData);
+        // Ensure balance is always a number
+        if (typeof parsedWallet.balance !== 'number') {
+          parsedWallet.balance = 0;
         }
-      } else {
-        // Use SecureStore for native
-        const walletData = await SecureStore.getItemAsync('wallet_data');
-        if (walletData) {
-          const parsedWallet = JSON.parse(walletData);
-          // Ensure balance is always a number
-          if (typeof parsedWallet.balance !== 'number') {
-            parsedWallet.balance = 0;
-          }
-          setWallet(parsedWallet);
-        }
+        setWallet(parsedWallet);
       }
     } catch (error) {
       console.error('Error loading wallet data:', error);
@@ -227,9 +253,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       };
 
       setWallet(newWallet);
-      await SecureStore.setItemAsync('wallet_data', JSON.stringify(newWallet));
-      await SecureStore.setItemAsync('private_key', walletData.privateKey);
-      await SecureStore.setItemAsync('mnemonic', walletData.mnemonic);
+      await setItemAsync('wallet_data', JSON.stringify(newWallet));
+      await setItemAsync('private_key', walletData.privateKey);
+      await setItemAsync('mnemonic', walletData.mnemonic);
     } catch (error) {
       console.error('Error creating wallet:', error);
       throw error;
@@ -251,8 +277,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       };
 
       setWallet(newWallet);
-      await SecureStore.setItemAsync('wallet_data', JSON.stringify(newWallet));
-      await SecureStore.setItemAsync('private_key', privateKey);
+      await setItemAsync('wallet_data', JSON.stringify(newWallet));
+      await setItemAsync('private_key', privateKey);
     } catch (error) {
       console.error('Error importing wallet:', error);
       throw error;
@@ -263,9 +289,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const clearWallet = async () => {
     try {
-      await SecureStore.deleteItemAsync('wallet_data');
-      await SecureStore.deleteItemAsync('private_key');
-      await SecureStore.deleteItemAsync('mnemonic');
+      await deleteItemAsync('wallet_data');
+      await deleteItemAsync('private_key');
+      await deleteItemAsync('mnemonic');
       await AsyncStorage.removeItem('card_mode');
       await AsyncStorage.removeItem('pending_transactions');
       setWallet(null);
@@ -362,7 +388,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const processOnlineTransaction = async (transaction: NFCTransaction) => {
     try {
       // Get private key for signing
-      const privateKey = await SecureStore.getItemAsync('private_key');
+      const privateKey = await getItemAsync('private_key');
       if (!privateKey) throw new Error('No private key found');
 
       // Sign transaction offline using Sui client
