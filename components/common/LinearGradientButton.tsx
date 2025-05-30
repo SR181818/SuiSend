@@ -1,33 +1,56 @@
+
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface LinearGradientButtonProps {
+  title: string;
   onPress: () => void;
-  disabled?: boolean;
-  colors: string[];
-  icon?: React.ReactNode;
-  label: string;
   isLoading?: boolean;
+  disabled?: boolean;
+  icon?: React.ReactNode;
+  colors?: string[];
+  variant?: 'primary' | 'secondary';
+  size?: 'small' | 'medium' | 'large';
 }
 
 const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
+  title,
   onPress,
-  disabled = false,
-  colors,
-  icon,
-  label,
   isLoading = false,
+  disabled = false,
+  icon,
+  colors = ['#6366f1', '#8b5cf6'],
+  variant = 'primary',
+  size = 'medium',
 }) => {
+  const getButtonColors = () => {
+    if (disabled) return ['#9ca3af', '#6b7280'];
+    if (variant === 'secondary') return ['#374151', '#4b5563'];
+    return colors;
+  };
+
+  const getButtonSize = () => {
+    switch (size) {
+      case 'small':
+        return styles.small;
+      case 'large':
+        return styles.large;
+      default:
+        return styles.medium;
+    }
+  };
+
   return (
     <TouchableOpacity
-      style={[styles.button, disabled && styles.disabledButton]}
       onPress={onPress}
       disabled={disabled || isLoading}
+      style={[styles.container, getButtonSize()]}
+      activeOpacity={0.8}
     >
       <LinearGradient
-        colors={colors}
-        style={styles.gradient}
+        colors={getButtonColors()}
+        style={[styles.gradient, getButtonSize()]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -36,7 +59,9 @@ const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
         ) : (
           <View style={styles.contentContainer}>
             {icon && <View style={styles.iconContainer}>{icon}</View>}
-            <Text style={styles.label}>{label}</Text>
+            <Text style={[styles.text, size === 'small' && styles.smallText]}>
+              {title}
+            </Text>
           </View>
         )}
       </LinearGradient>
@@ -45,31 +70,43 @@ const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
 };
 
 const styles = StyleSheet.create({
-  button: {
-    borderRadius: 16,
+  container: {
+    borderRadius: 12,
     overflow: 'hidden',
   },
-  disabledButton: {
-    opacity: 0.6,
-  },
   gradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 12,
   },
   contentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   iconContainer: {
     marginRight: 8,
   },
-  label: {
+  text: {
     color: 'white',
-    fontFamily: 'Inter-SemiBold',
     fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  smallText: {
+    fontSize: 14,
+  },
+  small: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  medium: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  large: {
+    paddingHorizontal: 32,
+    paddingVertical: 16,
   },
 });
 

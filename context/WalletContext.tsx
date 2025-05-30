@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,11 +7,15 @@ import { createWalletFromMnemonic, createWalletFromPrivateKey } from '@/utils/cr
 import NfcManager from '@/services/NfcManager';
 import { createUser, createTransaction, getTransactions } from '@/utils/api';
 
+export type CardMode = 'sender' | 'receiver' | null;
+export type AppMode = 'online' | 'offline';
+
 interface WalletInfo {
   address: string;
   name: string;
-  cardType: 'sender' | 'receiver' | null;
-  isOnline: boolean;
+  cardMode: CardMode;
+  appMode: AppMode;
+  balance: number;
 }
 
 interface PendingTransaction {
@@ -21,351 +26,451 @@ interface PendingTransaction {
   from?: string;
   timestamp: number;
   cardId?: string;
+  isOffline: boolean;
+  status: 'pending' | 'completed' | 'failed';
+}
+
+interface NFCTransaction {
+  amount: number;
+  fromCard: string;
+  toCard: string;
+  timestamp: number;
+  signature?: string;
 }
 
 interface WalletContextType {
-  walletInfo: WalletInfo;
+  // Wallet state
+  wallet: WalletInfo | null;
+  isLoading: boolean;
+  
+  // Card mode management
+  cardMode: CardMode;
+  setCardMode: (mode: CardMode) => void;
+  
+  // App mode management
+  appMode: AppMode;
+  setAppMode: (mode: AppMode) => void;
+  
+  // Pending transactions (offline queue)
   pendingTransactions: PendingTransaction[];
-  isOnlineMode: boolean;
-  createWallet: (mnemonic: string) => Promise<void>;
-  importWallet: (value: string, type: 'mnemonic' | 'privateKey') => Promise<void>;
-  setCardType: (type: 'sender' | 'receiver') => Promise<void>;
-  toggleOnlineMode: () => void;
-  processNfcTransaction: (cardData: any, amount: number) => Promise<void>;
-  syncPendingTransactions: () => Promise<void>;
-  refreshWallet: () => Promise<void>;
+  
+  // NFC operations
+  startNfcListening: () => Promise<void>;
+  stopNfcListening: () => void;
+  performNfcTransaction: (amount: number, recipientCard?: string) => Promise<void>;
+  
+  // Transaction management
+  processPendingTransactions: () => Promise<void>;
+  createOfflineTransaction: (transaction: NFCTransaction) => void;
+  
+  // Wallet operations
+  createWallet: (mnemonic?: string) => Promise<void>;
+  importWallet: (privateKey: string) => Promise<void>;
+  clearWallet: () => Promise<void>;
+  
+  // Connection status
+  isOnline: boolean;
 }
 
-const WalletContext = createContext<WalletContextType>({
-  walletInfo: { address: '', name: '', cardType: null, isOnline: false },
-  pendingTransactions: [],
-  isOnlineMode: true,
-  createWallet: async () => {},
-  importWallet: async () => {},
-  setCardType: async () => {},
-  toggleOnlineMode: () => {},
-  processNfcTransaction: async () => {},
-  syncPendingTransactions: async () => {},
-  refreshWallet: async () => {},
-});
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export const useWallet = () => useContext(WalletContext);
-
-const storage = Platform.OS === 'web' ? AsyncStorage : SecureStore;
-
-const storeData = async (key: string, value: string) => {
-  try {
-    if (Platform.OS === 'web') {
-      await AsyncStorage.setItem(key, value);
-    } else {
-      await SecureStore.setItemAsync(key, value);
-    }
-  } catch (error) {
-    console.error('Error storing data:', error);
+export const useWallet = (): WalletContextType => {
+  const context = useContext(WalletContext);
+  if (!context) {
+    throw new Error('useWallet must be used within a WalletProvider');
   }
+  return context;
 };
 
-const getData = async (key: string) => {
-  try {
-    if (Platform.OS === 'web') {
-      return await AsyncStorage.getItem(key);
-    } else {
-      return await SecureStore.getItemAsync(key);
-    }
-  } catch (error) {
-    console.error('Error getting data:', error);
-    return null;
-  }
-};
+interface WalletProviderProps {
+  children: ReactNode;
+}
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [walletInfo, setWalletInfo] = useState<WalletInfo>({ 
-    address: '', 
-    name: '', 
-    cardType: null, 
-    isOnline: false 
-  });
+export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
+  const [wallet, setWallet] = useState<WalletInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [cardMode, setCardModeState] = useState<CardMode>(null);
+  const [appMode, setAppModeState] = useState<AppMode>('online');
   const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
-  const [isOnlineMode, setIsOnlineMode] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [isNfcListening, setIsNfcListening] = useState(false);
 
+  // Load saved settings on app start
   useEffect(() => {
-    const loadWallet = async () => {
-      try {
-        const walletData = await getData('wallet_data');
-        const storedUserId = await getData('user_id');
-        const pendingTxData = await getData('pending_transactions');
-        const onlineMode = await getData('online_mode');
-
-        if (walletData) {
-          const parsedWallet = JSON.parse(walletData);
-          setWalletInfo({
-            address: parsedWallet.address || '',
-            name: parsedWallet.name || 'My Wallet',
-            cardType: parsedWallet.cardType || null,
-            isOnline: false
-          });
-
-          if (storedUserId) {
-            setUserId(storedUserId);
-            await refreshWallet();
-          }
-        }
-
-        if (pendingTxData) {
-          setPendingTransactions(JSON.parse(pendingTxData));
-        }
-
-        if (onlineMode) {
-          setIsOnlineMode(JSON.parse(onlineMode));
-        }
-
-        // Check online status
-        await checkOnlineStatus();
-      } catch (error) {
-        console.error('Error loading wallet:', error);
-      }
-    };
-
-    loadWallet();
+    loadWalletData();
+    loadAppSettings();
+    loadPendingTransactions();
+    checkNetworkStatus();
   }, []);
 
-  const checkOnlineStatus = async () => {
-    try {
-      // Simple connectivity check
-      const response = await fetch('https://jsonplaceholder.typicode.com/posts/1', {
-        method: 'HEAD',
-        mode: 'no-cors'
-      });
-      setWalletInfo(prev => ({ ...prev, isOnline: true }));
+  // Monitor network status
+  useEffect(() => {
+    const interval = setInterval(checkNetworkStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
-      // Auto-sync pending transactions when online
-      if (pendingTransactions.length > 0) {
-        await syncPendingTransactions();
+  // Process pending transactions when coming online
+  useEffect(() => {
+    if (isOnline && pendingTransactions.length > 0) {
+      processPendingTransactions();
+    }
+  }, [isOnline]);
+
+  const checkNetworkStatus = async () => {
+    try {
+      // Simple network check - you might want to replace with actual connectivity check
+      const response = await fetch('https://httpbin.org/status/200', {
+        method: 'HEAD',
+        timeout: 5000,
+      });
+      setIsOnline(response.ok);
+      if (response.ok && appMode === 'offline') {
+        // Auto switch to online if network is available
+        setAppMode('online');
       }
-    } catch (error) {
-      setWalletInfo(prev => ({ ...prev, isOnline: false }));
+    } catch {
+      setIsOnline(false);
+      if (appMode === 'online') {
+        // Auto switch to offline if network is unavailable
+        setAppMode('offline');
+      }
     }
   };
 
-  const createWallet = async (mnemonic: string) => {
+  const loadWalletData = async () => {
     try {
-      const { address, privateKey } = await createWalletFromMnemonic(mnemonic);
-      console.log('Wallet created successfully:', { address });
-
-      // Create user in backend
-      try {
-        const user = await createUser(address);
-        await storeData('user_id', user.id.toString());
-        setUserId(user.id.toString());
-        console.log('User created in backend:', user.id);
-      } catch (backendError) {
-        console.warn('Backend user creation failed, continuing without backend:', backendError);
+      const storedWallet = await SecureStore.getItemAsync('wallet_data');
+      if (storedWallet) {
+        setWallet(JSON.parse(storedWallet));
       }
+    } catch (error) {
+      console.error('Error loading wallet data:', error);
+    }
+  };
 
-      const newWalletInfo = {
-        address,
-        name: 'My Wallet',
-        cardType: null,
-        isOnline: false
+  const loadAppSettings = async () => {
+    try {
+      const mode = await AsyncStorage.getItem('card_mode');
+      const appModeStored = await AsyncStorage.getItem('app_mode');
+      if (mode) setCardModeState(mode as CardMode);
+      if (appModeStored) setAppModeState(appModeStored as AppMode);
+    } catch (error) {
+      console.error('Error loading app settings:', error);
+    }
+  };
+
+  const loadPendingTransactions = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('pending_transactions');
+      if (stored) {
+        setPendingTransactions(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Error loading pending transactions:', error);
+    }
+  };
+
+  const savePendingTransactions = async (transactions: PendingTransaction[]) => {
+    try {
+      await AsyncStorage.setItem('pending_transactions', JSON.stringify(transactions));
+    } catch (error) {
+      console.error('Error saving pending transactions:', error);
+    }
+  };
+
+  const setCardMode = async (mode: CardMode) => {
+    setCardModeState(mode);
+    try {
+      if (mode) {
+        await AsyncStorage.setItem('card_mode', mode);
+      } else {
+        await AsyncStorage.removeItem('card_mode');
+      }
+    } catch (error) {
+      console.error('Error saving card mode:', error);
+    }
+  };
+
+  const setAppMode = async (mode: AppMode) => {
+    setAppModeState(mode);
+    try {
+      await AsyncStorage.setItem('app_mode', mode);
+    } catch (error) {
+      console.error('Error saving app mode:', error);
+    }
+  };
+
+  const createWallet = async (mnemonic?: string) => {
+    setIsLoading(true);
+    try {
+      const walletData = await createWalletFromMnemonic(mnemonic);
+      const newWallet: WalletInfo = {
+        address: walletData.address,
+        name: 'My NFC Wallet',
+        cardMode: null,
+        appMode: 'online',
+        balance: 0,
       };
-
-      const walletData = {
-        address,
-        privateKey,
-        mnemonic,
-        name: 'My Wallet',
-        cardType: null
-      };
-
-      await storeData('wallet_data', JSON.stringify(walletData));
-      setWalletInfo(newWalletInfo);
-      console.log('Wallet data stored successfully');
-
-      await checkOnlineStatus();
+      
+      setWallet(newWallet);
+      await SecureStore.setItemAsync('wallet_data', JSON.stringify(newWallet));
+      await SecureStore.setItemAsync('private_key', walletData.privateKey);
+      await SecureStore.setItemAsync('mnemonic', walletData.mnemonic);
     } catch (error) {
       console.error('Error creating wallet:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const importWallet = async (value: string, type: 'mnemonic' | 'privateKey') => {
+  const importWallet = async (privateKey: string) => {
+    setIsLoading(true);
     try {
-      let address = '';
-      let privateKey = '';
-
-      if (type === 'mnemonic') {
-        const wallet = await createWalletFromMnemonic(value);
-        address = wallet.address;
-        privateKey = wallet.privateKey;
-      } else {
-        const wallet = await createWalletFromPrivateKey(value);
-        address = wallet.address;
-        privateKey = value;
-      }
-
-      try {
-        const user = await createUser(address);
-        await storeData('user_id', user.id.toString());
-        setUserId(user.id.toString());
-      } catch (backendError) {
-        console.warn('Backend user creation failed, continuing without backend:', backendError);
-      }
-
-      const newWalletInfo = {
-        address,
-        name: 'My Wallet',
-        cardType: null,
-        isOnline: false
+      const walletData = await createWalletFromPrivateKey(privateKey);
+      const newWallet: WalletInfo = {
+        address: walletData.address,
+        name: 'Imported NFC Wallet',
+        cardMode: null,
+        appMode: 'online',
+        balance: 0,
       };
-
-      const walletData = {
-        address,
-        privateKey: type === 'mnemonic' ? privateKey : value,
-        mnemonic: type === 'mnemonic' ? value : '',
-        name: 'My Wallet',
-        cardType: null
-      };
-
-      await storeData('wallet_data', JSON.stringify(walletData));
-      setWalletInfo(newWalletInfo);
-
-      await checkOnlineStatus();
+      
+      setWallet(newWallet);
+      await SecureStore.setItemAsync('wallet_data', JSON.stringify(newWallet));
+      await SecureStore.setItemAsync('private_key', privateKey);
     } catch (error) {
       console.error('Error importing wallet:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const setCardType = async (type: 'sender' | 'receiver') => {
+  const clearWallet = async () => {
     try {
-      const walletData = await getData('wallet_data');
-      if (walletData) {
-        const parsedWallet = JSON.parse(walletData);
-        parsedWallet.cardType = type;
-        await storeData('wallet_data', JSON.stringify(parsedWallet));
-
-        setWalletInfo(prev => ({ ...prev, cardType: type }));
-      }
-    } catch (error) {
-      console.error('Error setting card type:', error);
-      throw error;
-    }
-  };
-
-  const toggleOnlineMode = () => {
-    const newMode = !isOnlineMode;
-    setIsOnlineMode(newMode);
-    storeData('online_mode', JSON.stringify(newMode));
-  };
-
-  const processNfcTransaction = async (transactionData: any, amount: number) => {
-    try {
-      const transaction: PendingTransaction = {
-        id: transactionData.id || Date.now().toString(),
-        type: transactionData.type,
-        amount: transactionData.amount,
-        to: transactionData.to,
-        from: transactionData.from,
-        timestamp: transactionData.timestamp,
-        cardId: transactionData.cardId
-      };
-
-      if (isOnlineMode && walletInfo.isOnline) {
-        // ONLINE MODE: Process immediately with Sui client
-        console.log('🟢 ONLINE MODE: Processing transaction immediately:', transaction);
-        
-        // Here you would use Sui client to sign and submit transaction
-        // For now, we'll simulate with backend API
-        if (userId) {
-          await createTransaction(userId, {
-            symbol: 'SUI',
-            amount: transaction.amount,
-            type: transaction.type === 'send' ? 'sent' : 'received',
-            to_address: transaction.to,
-            from_address: transaction.from
-          });
-        }
-
-        console.log('✅ Transaction completed and submitted to blockchain');
-      } else {
-        // OFFLINE MODE: Sign transaction offline and queue for later submission
-        console.log('🔴 OFFLINE MODE: Signing transaction offline and queuing:', transaction);
-        
-        // Here you would:
-        // 1. Create the Sui transaction object
-        // 2. Sign it with local private key (offline signing)
-        // 3. Store the signed transaction for later submission
-        
-        const newPendingTransactions = [...pendingTransactions, transaction];
-        setPendingTransactions(newPendingTransactions);
-        await storeData('pending_transactions', JSON.stringify(newPendingTransactions));
-        console.log('⏳ Transaction signed offline and queued for submission');
-      }
-    } catch (error) {
-      console.error('Error processing NFC transaction:', error);
-      throw error;
-    }
-  };
-
-  const syncPendingTransactions = async () => {
-    if (!walletInfo.isOnline || !userId || pendingTransactions.length === 0) return;
-
-    try {
-      console.log('Syncing pending transactions:', pendingTransactions.length);
-
-      for (const transaction of pendingTransactions) {
-        await createTransaction(userId, {
-          symbol: 'SUI',
-          amount: transaction.amount,
-          type: transaction.type === 'send' ? 'sent' : 'received',
-          to_address: transaction.to,
-          from_address: transaction.from
-        });
-      }
-
-      // Clear pending transactions after successful sync
+      await SecureStore.deleteItemAsync('wallet_data');
+      await SecureStore.deleteItemAsync('private_key');
+      await SecureStore.deleteItemAsync('mnemonic');
+      await AsyncStorage.removeItem('card_mode');
+      await AsyncStorage.removeItem('pending_transactions');
+      setWallet(null);
+      setCardModeState(null);
       setPendingTransactions([]);
-      await storeData('pending_transactions', JSON.stringify([]));
-      console.log('All pending transactions synced successfully');
     } catch (error) {
-      console.error('Error syncing pending transactions:', error);
+      console.error('Error clearing wallet:', error);
+    }
+  };
+
+  const startNfcListening = async () => {
+    try {
+      await NfcManager.start();
+      setIsNfcListening(true);
+      
+      // Start listening for NFC tags
+      NfcManager.registerTagEvent((tag) => {
+        handleNfcTagDetected(tag);
+      });
+    } catch (error) {
+      console.error('Error starting NFC:', error);
       throw error;
     }
   };
 
-  const refreshWallet = async () => {
-    if (!userId) return;
+  const stopNfcListening = () => {
+    NfcManager.unregisterTagEvent();
+    setIsNfcListening(false);
+  };
+
+  const handleNfcTagDetected = async (tag: any) => {
+    if (!wallet || !cardMode) return;
 
     try {
-      await checkOnlineStatus();
-
-      if (walletInfo.isOnline) {
-        const transactions = await getTransactions(userId);
-        console.log('Wallet refreshed with', transactions.length, 'transactions');
+      // Parse NFC data (you'll need to implement this based on your NFC data format)
+      const nfcData = parseNfcData(tag);
+      
+      if (cardMode === 'sender') {
+        // Sender card: Push money (like Mastercard/Visa)
+        await handleSenderTransaction(nfcData);
+      } else if (cardMode === 'receiver') {
+        // Receiver card: Pull money from the app
+        await handleReceiverTransaction(nfcData);
       }
     } catch (error) {
-      console.error('Error refreshing wallet:', error);
-      throw error;
+      console.error('Error handling NFC transaction:', error);
     }
   };
 
-  return (
-    <WalletContext.Provider
-      value={{
-        walletInfo,
-        pendingTransactions,
-        isOnlineMode,
-        createWallet,
-        importWallet,
-        setCardType,
-        toggleOnlineMode,
-        processNfcTransaction,
-        syncPendingTransactions,
-        refreshWallet,
-      }}
-    >
-      {children}
-    </WalletContext.Provider>
-  );
+  const parseNfcData = (tag: any) => {
+    // Implement NFC data parsing logic here
+    // This should extract transaction data from the NFC tag
+    return {
+      cardId: tag.id || 'unknown',
+      amount: 0, // Extract from tag data
+      type: 'payment',
+    };
+  };
+
+  const handleSenderTransaction = async (nfcData: any) => {
+    const transaction: NFCTransaction = {
+      amount: nfcData.amount,
+      fromCard: wallet!.address,
+      toCard: nfcData.cardId,
+      timestamp: Date.now(),
+    };
+
+    if (appMode === 'online' && isOnline) {
+      // Process immediately
+      await processOnlineTransaction(transaction);
+    } else {
+      // Queue for offline processing
+      createOfflineTransaction(transaction);
+    }
+  };
+
+  const handleReceiverTransaction = async (nfcData: any) => {
+    const transaction: NFCTransaction = {
+      amount: nfcData.amount,
+      fromCard: nfcData.cardId,
+      toCard: wallet!.address,
+      timestamp: Date.now(),
+    };
+
+    if (appMode === 'online' && isOnline) {
+      // Process immediately
+      await processOnlineTransaction(transaction);
+    } else {
+      // Queue for offline processing
+      createOfflineTransaction(transaction);
+    }
+  };
+
+  const processOnlineTransaction = async (transaction: NFCTransaction) => {
+    try {
+      // Get private key for signing
+      const privateKey = await SecureStore.getItemAsync('private_key');
+      if (!privateKey) throw new Error('No private key found');
+
+      // Sign transaction offline using Sui client
+      const signedTransaction = await signTransactionOffline(transaction, privateKey);
+      
+      // Submit to network
+      const result = await submitTransaction(signedTransaction);
+      
+      console.log('Transaction completed:', result);
+    } catch (error) {
+      console.error('Error processing online transaction:', error);
+      // Fallback to offline queue
+      createOfflineTransaction(transaction);
+    }
+  };
+
+  const signTransactionOffline = async (transaction: NFCTransaction, privateKey: string) => {
+    // Implement Sui offline transaction signing here
+    // This is where you'd use Sui SDK to create and sign transactions
+    return {
+      ...transaction,
+      signature: 'signed_transaction_data',
+    };
+  };
+
+  const submitTransaction = async (signedTransaction: any) => {
+    // Submit signed transaction to Sui network
+    // Implement actual network submission here
+    return { success: true, txHash: 'mock_hash' };
+  };
+
+  const createOfflineTransaction = (transaction: NFCTransaction) => {
+    const pendingTx: PendingTransaction = {
+      id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: transaction.fromCard === wallet?.address ? 'send' : 'receive',
+      amount: transaction.amount,
+      from: transaction.fromCard,
+      to: transaction.toCard,
+      timestamp: transaction.timestamp,
+      isOffline: true,
+      status: 'pending',
+    };
+
+    const updatedPending = [...pendingTransactions, pendingTx];
+    setPendingTransactions(updatedPending);
+    savePendingTransactions(updatedPending);
+  };
+
+  const performNfcTransaction = async (amount: number, recipientCard?: string) => {
+    if (!wallet || !cardMode) {
+      throw new Error('Wallet or card mode not set');
+    }
+
+    // This would typically write transaction data to an NFC tag
+    // For now, we'll simulate the transaction
+    const transaction: NFCTransaction = {
+      amount,
+      fromCard: cardMode === 'sender' ? wallet.address : recipientCard || 'unknown',
+      toCard: cardMode === 'sender' ? recipientCard || 'unknown' : wallet.address,
+      timestamp: Date.now(),
+    };
+
+    if (appMode === 'online' && isOnline) {
+      await processOnlineTransaction(transaction);
+    } else {
+      createOfflineTransaction(transaction);
+    }
+  };
+
+  const processPendingTransactions = async () => {
+    if (!isOnline || pendingTransactions.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const processedTransactions: PendingTransaction[] = [];
+      
+      for (const pendingTx of pendingTransactions) {
+        try {
+          const transaction: NFCTransaction = {
+            amount: pendingTx.amount,
+            fromCard: pendingTx.from || '',
+            toCard: pendingTx.to || '',
+            timestamp: pendingTx.timestamp,
+          };
+          
+          await processOnlineTransaction(transaction);
+          processedTransactions.push({ ...pendingTx, status: 'completed' });
+        } catch (error) {
+          console.error('Failed to process pending transaction:', error);
+          processedTransactions.push({ ...pendingTx, status: 'failed' });
+        }
+      }
+
+      // Remove completed transactions, keep failed ones for retry
+      const remainingTransactions = processedTransactions.filter(tx => tx.status === 'failed');
+      setPendingTransactions(remainingTransactions);
+      savePendingTransactions(remainingTransactions);
+    } catch (error) {
+      console.error('Error processing pending transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value: WalletContextType = {
+    wallet,
+    isLoading,
+    cardMode,
+    setCardMode,
+    appMode,
+    setAppMode,
+    pendingTransactions,
+    startNfcListening,
+    stopNfcListening,
+    performNfcTransaction,
+    processPendingTransactions,
+    createOfflineTransaction,
+    createWallet,
+    importWallet,
+    clearWallet,
+    isOnline,
+  };
+
+  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 };

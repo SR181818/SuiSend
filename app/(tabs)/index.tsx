@@ -1,331 +1,298 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useTheme } from '@/context/ThemeContext';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useWallet } from '@/context/WalletContext';
-import { Scan, Send, QrCode, Plus, Wifi, WifiOff, CreditCard, Smartphone } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import ActionButton from '@/components/common/ActionButton';
-import useNfcPayment from '@/hooks/useNfcPayment';
+import { useTheme } from '@/context/ThemeContext';
+import LinearGradientButton from '@/components/common/LinearGradientButton';
+import { CreditCard, Wifi, WifiOff, Radio, Send, Download } from 'lucide-react-native';
 
 export default function HomeScreen() {
-  const router = useRouter();
+  const { wallet, cardMode, setCardMode, appMode, setAppMode, isOnline, pendingTransactions, startNfcListening, stopNfcListening, processPendingTransactions } = useWallet();
   const { theme } = useTheme();
-  const { 
-    walletInfo, 
-    pendingTransactions, 
-    isOnlineMode, 
-    setCardType, 
-    toggleOnlineMode, 
-    processNfcTransaction, 
-    syncPendingTransactions 
-  } = useWallet();
-  const { isNfcSupported, isScanning, startNfcPayment } = useNfcPayment();
+  const [isNfcActive, setIsNfcActive] = useState(false);
 
-  const handleCardTypeSelection = async (type: 'sender' | 'receiver') => {
-    try {
-      await setCardType(type);
-      const description = type === 'sender' 
-        ? 'Your device now acts like a debit/credit card. When tapped, it will send money from your wallet.'
-        : 'Your device now acts like a POS terminal. When tapped, it will receive money into your wallet.';
-      
-      Alert.alert(
-        `${type.charAt(0).toUpperCase() + type.slice(1)} Card Active`, 
-        description
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to set card type');
-    }
+  const handleCardModeSelect = async (mode: 'sender' | 'receiver') => {
+    await setCardMode(mode);
+    Alert.alert(
+      'Card Mode Set',
+      `Your device is now configured as a ${mode} card. ${
+        mode === 'sender' 
+          ? 'It works like a Mastercard/Visa - tap to send money.' 
+          : 'Tap to receive/pull money from payments.'
+      }`
+    );
   };
 
-  const handleNfcTap = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('NFC Not Available', 'NFC payments are only available on mobile devices');
-      return;
-    }
+  const handleModeToggle = async () => {
+    const newMode = appMode === 'online' ? 'offline' : 'online';
+    await setAppMode(newMode);
     
-    if (!isNfcSupported) {
-      Alert.alert('NFC Not Supported', 'NFC is not supported on this device');
-      return;
+    if (newMode === 'online' && isOnline && pendingTransactions.length > 0) {
+      Alert.alert(
+        'Pending Transactions',
+        `You have ${pendingTransactions.length} pending transactions. Process them now?`,
+        [
+          { text: 'Later', style: 'cancel' },
+          { text: 'Process', onPress: processPendingTransactions },
+        ]
+      );
     }
+  };
 
-    if (!walletInfo.cardType) {
-      Alert.alert('Card Type Not Set', 'Please select whether this device should act as a sender or receiver card first.');
-      return;
-    }
-
+  const handleNfcToggle = async () => {
     try {
-      const amount = 10; // In real app, this would be user input
-      await startNfcPayment(amount);
+      if (isNfcActive) {
+        stopNfcListening();
+        setIsNfcActive(false);
+      } else {
+        await startNfcListening();
+        setIsNfcActive(true);
+        Alert.alert('NFC Active', 'Your device is now ready for NFC transactions.');
+      }
     } catch (error) {
-      Alert.alert('Transaction Failed', 'Failed to process NFC transaction');
+      Alert.alert('NFC Error', 'Failed to start NFC. Please check your device settings.');
     }
   };
 
-  const handleSyncPending = async () => {
-    try {
-      await syncPendingTransactions();
-      Alert.alert('Sync Complete', 'All pending transactions have been synced');
-    } catch (error) {
-      Alert.alert('Sync Failed', 'Failed to sync pending transactions');
-    }
+  const getStatusColor = () => {
+    if (!isOnline) return '#ef4444';
+    if (appMode === 'offline') return '#f59e0b';
+    return '#10b981';
   };
 
-  const getConnectionStatusColor = () => {
-    if (!isOnlineMode) return theme.colors.warning;
-    return walletInfo.isOnline ? theme.colors.success : theme.colors.error;
+  const getStatusText = () => {
+    if (!isOnline) return 'No Internet Connection';
+    if (appMode === 'offline') return 'Offline Mode';
+    return 'Online Mode';
   };
 
-  const getConnectionStatusText = () => {
-    if (!isOnlineMode) return 'Offline Mode';
-    return walletInfo.isOnline ? 'Online' : 'No Internet';
-  };
+  if (!wallet) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.title, { color: theme.text }]}>
+          Welcome to NFC Payment Wallet
+        </Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          Create or import a wallet to get started
+        </Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.greeting, { color: theme.colors.text }]}>
-            SuiSend NFC Wallet
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Status Header */}
+      <View style={[styles.statusHeader, { backgroundColor: theme.surface }]}>
+        <View style={styles.statusRow}>
+          <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]} />
+          <Text style={[styles.statusText, { color: theme.text }]}>
+            {getStatusText()}
           </Text>
-          <Text style={[styles.walletAddress, { color: theme.colors.textSecondary }]}>
-            {walletInfo.address ? `${walletInfo.address.slice(0, 6)}...${walletInfo.address.slice(-4)}` : 'No Wallet'}
-          </Text>
+          {isOnline ? <Wifi size={20} color={theme.text} /> : <WifiOff size={20} color={theme.text} />}
         </View>
-
-        {/* Connection Status */}
-        <Animated.View entering={FadeInDown.delay(100)} style={styles.statusContainer}>
-          <LinearGradient
-            colors={[getConnectionStatusColor() + '20', getConnectionStatusColor() + '10']}
-            style={styles.statusCard}
-          >
-            <View style={styles.statusHeader}>
-              {isOnlineMode && walletInfo.isOnline ? (
-                <Wifi size={24} color={getConnectionStatusColor()} />
-              ) : (
-                <WifiOff size={24} color={getConnectionStatusColor()} />
-              )}
-              <Text style={[styles.statusText, { color: getConnectionStatusColor() }]}>
-                {getConnectionStatusText()}
-              </Text>
-            </View>
-            <TouchableOpacity onPress={toggleOnlineMode} style={styles.modeToggle}>
-              <Text style={[styles.modeToggleText, { color: theme.colors.primary }]}>
-                Switch to {isOnlineMode ? 'Offline' : 'Online'} Mode
-              </Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Card Type Selection */}
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Card Type
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>
-            Current: {walletInfo.cardType ? walletInfo.cardType.charAt(0).toUpperCase() + walletInfo.cardType.slice(1) : 'Not Set'}
-          </Text>
-          
-          <View style={styles.cardTypeContainer}>
-            <TouchableOpacity 
-              style={[
-                styles.cardTypeButton, 
-                { 
-                  backgroundColor: walletInfo.cardType === 'sender' ? theme.colors.primary + '20' : theme.colors.surface,
-                  borderColor: walletInfo.cardType === 'sender' ? theme.colors.primary : theme.colors.border
-                }
-              ]}
-              onPress={() => handleCardTypeSelection('sender')}
-            >
-              <CreditCard size={32} color={walletInfo.cardType === 'sender' ? theme.colors.primary : theme.colors.textSecondary} />
-              <Text style={[styles.cardTypeTitle, { color: theme.colors.text }]}>Sender Card</Text>
-              <Text style={[styles.cardTypeDescription, { color: theme.colors.textSecondary }]}>
-                Like Mastercard/Visa - tap to send payments
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[
-                styles.cardTypeButton, 
-                { 
-                  backgroundColor: walletInfo.cardType === 'receiver' ? theme.colors.primary + '20' : theme.colors.surface,
-                  borderColor: walletInfo.cardType === 'receiver' ? theme.colors.primary : theme.colors.border
-                }
-              ]}
-              onPress={() => handleCardTypeSelection('receiver')}
-            >
-              <Smartphone size={32} color={walletInfo.cardType === 'receiver' ? theme.colors.primary : theme.colors.textSecondary} />
-              <Text style={[styles.cardTypeTitle, { color: theme.colors.text }]}>Receiver Card</Text>
-              <Text style={[styles.cardTypeDescription, { color: theme.colors.textSecondary }]}>
-                Tap to receive payments into your wallet
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-
-        {/* NFC Actions */}
-        <Animated.View entering={FadeInDown.delay(300)} style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            NFC Actions
-          </Text>
-          
-          <View style={styles.actionsContainer}>
-            <ActionButton
-              title="Tap NFC Card"
-              subtitle={`${walletInfo.cardType === 'sender' ? 'Send' : 'Receive'} Payment`}
-              icon={<Scan size={24} color={theme.colors.primary} />}
-              onPress={handleNfcTap}
-              disabled={!walletInfo.cardType || isScanning}
-            />
-          </View>
-        </Animated.View>
-
-        {/* Pending Transactions */}
+        
         {pendingTransactions.length > 0 && (
-          <Animated.View entering={FadeInDown.delay(400)} style={styles.section}>
-            <View style={styles.pendingHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                Pending Transactions ({pendingTransactions.length})
-              </Text>
-              {walletInfo.isOnline && (
-                <TouchableOpacity onPress={handleSyncPending} style={styles.syncButton}>
-                  <Text style={[styles.syncButtonText, { color: theme.colors.primary }]}>
-                    Sync Now
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            
-            {pendingTransactions.map((tx) => (
-              <View key={tx.id} style={[styles.pendingTransaction, { backgroundColor: theme.colors.surface }]}>
-                <Text style={[styles.pendingTxType, { color: theme.colors.text }]}>
-                  {tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}
-                </Text>
-                <Text style={[styles.pendingTxAmount, { color: theme.colors.textSecondary }]}>
-                  {tx.amount} SUI
-                </Text>
-                <Text style={[styles.pendingTxDate, { color: theme.colors.textSecondary }]}>
-                  {new Date(tx.timestamp).toLocaleDateString()}
-                </Text>
-              </View>
-            ))}
-          </Animated.View>
+          <Text style={[styles.pendingText, { color: theme.accent }]}>
+            {pendingTransactions.length} pending transactions
+          </Text>
         )}
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+
+      {/* Wallet Info */}
+      <View style={[styles.walletCard, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.walletAddress, { color: theme.textSecondary }]}>
+          {wallet.address.slice(0, 16)}...{wallet.address.slice(-8)}
+        </Text>
+        <Text style={[styles.balance, { color: theme.text }]}>
+          {wallet.balance.toFixed(4)} SUI
+        </Text>
+      </View>
+
+      {/* Card Mode Selection */}
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>
+          NFC Card Mode
+        </Text>
+        <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+          Choose how your device behaves during NFC transactions
+        </Text>
+
+        <View style={styles.cardModeContainer}>
+          <TouchableOpacity
+            style={[
+              styles.modeCard,
+              { backgroundColor: theme.background },
+              cardMode === 'sender' && { borderColor: theme.accent, borderWidth: 2 }
+            ]}
+            onPress={() => handleCardModeSelect('sender')}
+          >
+            <Send size={32} color={cardMode === 'sender' ? theme.accent : theme.textSecondary} />
+            <Text style={[styles.modeTitle, { color: theme.text }]}>Sender Card</Text>
+            <Text style={[styles.modeDescription, { color: theme.textSecondary }]}>
+              Works like Mastercard/Visa. Tap to send payments.
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.modeCard,
+              { backgroundColor: theme.background },
+              cardMode === 'receiver' && { borderColor: theme.accent, borderWidth: 2 }
+            ]}
+            onPress={() => handleCardModeSelect('receiver')}
+          >
+            <Download size={32} color={cardMode === 'receiver' ? theme.accent : theme.textSecondary} />
+            <Text style={[styles.modeTitle, { color: theme.text }]}>Receiver Card</Text>
+            <Text style={[styles.modeDescription, { color: theme.textSecondary }]}>
+              Tap to receive/pull money from payments.
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Mode Controls */}
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>
+          Transaction Mode
+        </Text>
+        
+        <View style={styles.controlsContainer}>
+          <LinearGradientButton
+            title={`Switch to ${appMode === 'online' ? 'Offline' : 'Online'} Mode`}
+            onPress={handleModeToggle}
+            icon={appMode === 'online' ? <WifiOff size={20} color="white" /> : <Wifi size={20} color="white" />}
+            colors={appMode === 'online' ? ['#f59e0b', '#d97706'] : ['#10b981', '#059669']}
+          />
+
+          {cardMode && (
+            <LinearGradientButton
+              title={isNfcActive ? 'Stop NFC Listening' : 'Start NFC Listening'}
+              onPress={handleNfcToggle}
+              icon={<Radio size={20} color="white" />}
+              colors={isNfcActive ? ['#ef4444', '#dc2626'] : ['#6366f1', '#4f46e5']}
+            />
+          )}
+        </View>
+      </View>
+
+      {/* Transaction Explanation */}
+      <View style={[styles.section, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>
+          How It Works
+        </Text>
+        <Text style={[styles.explanation, { color: theme.textSecondary }]}>
+          • <Text style={{ fontWeight: 'bold' }}>Online Mode:</Text> Transactions process immediately when you tap
+        </Text>
+        <Text style={[styles.explanation, { color: theme.textSecondary }]}>
+          • <Text style={{ fontWeight: 'bold' }}>Offline Mode:</Text> Transactions are queued until internet connection is restored
+        </Text>
+        <Text style={[styles.explanation, { color: theme.textSecondary }]}>
+          • Uses Sui blockchain offline signing for secure transactions
+        </Text>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
   },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  header: {
-    marginBottom: 30,
-  },
-  greeting: {
-    fontSize: 28,
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  statusHeader: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
+    marginLeft: 12,
+  },
+  pendingText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  walletCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    alignItems: 'center',
   },
   walletAddress: {
     fontSize: 14,
-    opacity: 0.7,
+    marginBottom: 8,
   },
-  statusContainer: {
-    marginBottom: 30,
-  },
-  statusCard: {
-    padding: 20,
-    borderRadius: 16,
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  statusText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 10,
-  },
-  modeToggle: {
-    alignSelf: 'flex-start',
-  },
-  modeToggleText: {
-    fontSize: 14,
-    fontWeight: '500',
+  balance: {
+    fontSize: 32,
+    fontWeight: 'bold',
   },
   section: {
-    marginBottom: 30,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   sectionSubtitle: {
     fontSize: 14,
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  cardTypeContainer: {
-    gap: 15,
+  cardModeContainer: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  cardTypeButton: {
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
+  modeCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  cardTypeTitle: {
+  modeTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: 8,
+    marginBottom: 4,
   },
-  cardTypeDescription: {
+  modeDescription: {
     fontSize: 12,
     textAlign: 'center',
+    lineHeight: 16,
   },
-  actionsContainer: {
-    gap: 15,
+  controlsContainer: {
+    gap: 12,
   },
-  pendingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  syncButton: {
-    padding: 8,
-  },
-  syncButtonText: {
+  explanation: {
     fontSize: 14,
-    fontWeight: '500',
-  },
-  pendingTransaction: {
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  pendingTxType: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  pendingTxAmount: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  pendingTxDate: {
-    fontSize: 12,
-    marginTop: 2,
+    lineHeight: 20,
+    marginBottom: 4,
   },
 });
