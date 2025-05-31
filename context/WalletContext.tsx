@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { createWalletFromMnemonic, createWalletFromPrivateKey } from '@/utils/cryptoUtils';
-import NfcManager from '@/services/NfcManager';
+import NfcService from '@/services/NfcService';
 
 export type CardMode = 'sender' | 'receiver' | null;
 export type AppMode = 'online' | 'offline';
@@ -282,11 +282,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const startNfcListening = async () => {
     try {
-      await NfcManager.start();
+      await NfcService.start();
       setIsNfcListening(true);
 
       // Start listening for NFC tags
-      NfcManager.registerTagEvent((tag) => {
+      NfcService.registerTagEvent((tag) => {
         handleNfcTagDetected(tag);
       });
     } catch (error) {
@@ -296,7 +296,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const stopNfcListening = () => {
-    NfcManager.unregisterTagEvent();
+    NfcService.unregisterTagEvent();
     setIsNfcListening(false);
   };
 

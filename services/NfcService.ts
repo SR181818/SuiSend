@@ -23,6 +23,8 @@ class NfcService {
   private static instance: NfcService;
   private isScanning: boolean = false;
   private isWriting: boolean = false;
+  private isInitialized: boolean = false;
+  private NfcManager: any = null;
 
   private constructor() {}
 
@@ -33,15 +35,35 @@ class NfcService {
     return NfcService.instance;
   }
 
+  private async initializeNfcManager(): Promise<void> {
+    if (Platform.OS === 'web' || this.isInitialized) {
+      return;
+    }
+
+    try {
+      // Dynamically import NFC Manager
+      this.NfcManager = require('react-native-nfc-manager').default;
+      
+      // Initialize NFC Manager
+      await this.NfcManager.start();
+      this.isInitialized = true;
+      console.log('NFC Manager initialized successfully');
+    } catch (error) {
+      console.log('NFC Manager not available or failed to initialize:', error);
+      this.NfcManager = null;
+      throw new Error('NFC not supported or failed to initialize');
+    }
+  }
+
   async isSupported(): Promise<boolean> {
     if (Platform.OS === 'web') return false;
     
     try {
-      // Try to import react-native-nfc-manager
-      const NfcManager = require('react-native-nfc-manager');
-      return await NfcManager.isSupported();
+      await this.initializeNfcManager();
+      if (!this.NfcManager) return false;
+      return await this.NfcManager.isSupported();
     } catch (error) {
-      console.log('NFC Manager not available:', error);
+      console.log('NFC not supported:', error);
       return false;
     }
   }
@@ -66,13 +88,17 @@ class NfcService {
         };
       }
       
-      const NfcManager = require('react-native-nfc-manager');
-      await NfcManager.requestTechnology([NfcManager.NfcTech.Ndef]);
-      const tag = await NfcManager.getTag();
+      await this.initializeNfcManager();
+      if (!this.NfcManager) {
+        throw new Error('NFC Manager not available');
+      }
+
+      await this.NfcManager.requestTechnology([this.NfcManager.NfcTech.Ndef]);
+      const tag = await this.NfcManager.getTag();
       
       if (tag.ndefMessage && tag.ndefMessage.length > 0) {
         const record = tag.ndefMessage[0];
-        const text = NfcManager.Ndef.text.decodePayload(record.payload);
+        const text = this.NfcManager.Ndef.text.decodePayload(record.payload);
         return JSON.parse(text);
       }
       
@@ -83,9 +109,8 @@ class NfcService {
     } finally {
       this.isScanning = false;
       try {
-        if (Platform.OS !== 'web') {
-          const NfcManager = require('react-native-nfc-manager');
-          await NfcManager.cancelTechnologyRequest();
+        if (Platform.OS !== 'web' && this.NfcManager) {
+          await this.NfcManager.cancelTechnologyRequest();
         }
       } catch (e) {
         // Ignore cleanup errors
@@ -134,14 +159,18 @@ class NfcService {
     }
     
     try {
-      const NfcManager = require('react-native-nfc-manager');
-      await NfcManager.requestTechnology([NfcManager.NfcTech.Ndef]);
+      await this.initializeNfcManager();
+      if (!this.NfcManager) {
+        throw new Error('NFC Manager not available');
+      }
+
+      await this.NfcManager.requestTechnology([this.NfcManager.NfcTech.Ndef]);
       
-      const bytes = NfcManager.Ndef.encodeMessage([
-        NfcManager.Ndef.textRecord(JSON.stringify(cardData))
+      const bytes = this.NfcManager.Ndef.encodeMessage([
+        this.NfcManager.Ndef.textRecord(JSON.stringify(cardData))
       ]);
       
-      await NfcManager.writeNdefMessage(bytes);
+      await this.NfcManager.writeNdefMessage(bytes);
       console.log('✅ Successfully wrote wallet data to NFC card');
     } catch (error) {
       console.error('Error writing to NFC card:', error);
@@ -149,8 +178,9 @@ class NfcService {
     } finally {
       this.isWriting = false;
       try {
-        const NfcManager = require('react-native-nfc-manager');
-        await NfcManager.cancelTechnologyRequest();
+        if (this.NfcManager) {
+          await this.NfcManager.cancelTechnologyRequest();
+        }
       } catch (e) {
         // Ignore cleanup errors
       }
@@ -172,13 +202,17 @@ class NfcService {
     }
     
     try {
-      const NfcManager = require('react-native-nfc-manager');
-      await NfcManager.requestTechnology([NfcManager.NfcTech.Ndef]);
-      const tag = await NfcManager.getTag();
+      await this.initializeNfcManager();
+      if (!this.NfcManager) {
+        throw new Error('NFC Manager not available');
+      }
+
+      await this.NfcManager.requestTechnology([this.NfcManager.NfcTech.Ndef]);
+      const tag = await this.NfcManager.getTag();
       
       if (tag.ndefMessage && tag.ndefMessage.length > 0) {
         const record = tag.ndefMessage[0];
-        const text = NfcManager.Ndef.text.decodePayload(record.payload);
+        const text = this.NfcManager.Ndef.text.decodePayload(record.payload);
         return JSON.parse(text);
       }
       
@@ -188,8 +222,9 @@ class NfcService {
       throw error;
     } finally {
       try {
-        const NfcManager = require('react-native-nfc-manager');
-        await NfcManager.cancelTechnologyRequest();
+        if (this.NfcManager) {
+          await this.NfcManager.cancelTechnologyRequest();
+        }
       } catch (e) {
         // Ignore cleanup errors
       }
@@ -210,6 +245,16 @@ class NfcService {
     } catch (error) {
       console.error('Error updating card balance:', error);
       throw error;
+    }
+  }
+
+  async cleanup(): Promise<void> {
+    if (Platform.OS === 'web' || !this.isInitialized || !this.NfcManager) return;
+
+    try {
+      await this.NfcManager.cancelTechnologyRequest();
+    } catch (error) {
+      console.warn('Failed to cleanup NFC:', error);
     }
   }
 }
