@@ -1,27 +1,32 @@
 
-import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
-// For web, use localStorage as fallback since SecureStore doesn't work on web
-export const setItemAsync = async (key: string, value: string): Promise<void> => {
-  if (Platform.OS === 'web') {
-    localStorage.setItem(key, value);
-    return Promise.resolve();
+// Web-compatible storage fallback
+const webStorage = {
+  async setItemAsync(key: string, value: string): Promise<void> {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+
+  async getItemAsync(key: string): Promise<string | null> {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key);
+    }
+    return null;
+  },
+
+  async deleteItemAsync(key: string): Promise<void> {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
   }
-  return SecureStore.setItemAsync(key, value);
 };
 
-export const getItemAsync = async (key: string): Promise<string | null> => {
-  if (Platform.OS === 'web') {
-    return Promise.resolve(localStorage.getItem(key));
-  }
-  return SecureStore.getItemAsync(key);
-};
+// Use SecureStore for native platforms, localStorage for web
+const storage = Platform.OS === 'web' ? webStorage : SecureStore;
 
-export const deleteItemAsync = async (key: string): Promise<void> => {
-  if (Platform.OS === 'web') {
-    localStorage.removeItem(key);
-    return Promise.resolve();
-  }
-  return SecureStore.deleteItemAsync(key);
-};
+export const setItemAsync = storage.setItemAsync;
+export const getItemAsync = storage.getItemAsync;
+export const deleteItemAsync = storage.deleteItemAsync;

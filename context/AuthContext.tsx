@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
+import { setItemAsync, getItemAsync, deleteItemAsync } from '@/utils/storage';
 
 interface User {
   id: string;
@@ -48,14 +48,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const authRequired = await SecureStore.getItemAsync('auth_required');
+      const authRequired = await getItemAsync('auth_required');
       setIsAuthRequiredState(authRequired === 'true');
 
-      const hasWalletStored = await SecureStore.getItemAsync('hasWallet');
+      const hasWalletStored = await getItemAsync('hasWallet');
       setHasWalletState(hasWalletStored === 'true');
 
       if (authRequired === 'true') {
-        const userId = await SecureStore.getItemAsync('user_id');
+        const userId = await getItemAsync('user_id');
         if (userId) {
           setUser({
             id: userId,
@@ -73,6 +73,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Error checking auth status:', error);
+      // Set default values if storage fails
+      setUser({
+        id: 'default_user',
+        isAuthenticated: true,
+        hasWallet: false,
+      });
+      setIsAuthRequiredState(false);
+      setHasWalletState(false);
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const setAuthRequired = async (required: boolean) => {
     try {
-      await SecureStore.setItemAsync('auth_required', required.toString());
+      await setItemAsync('auth_required', required.toString());
       setIsAuthRequiredState(required);
 
       if (!required) {
@@ -99,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const userId = email || `user_${Date.now()}`;
-      await SecureStore.setItemAsync('user_id', userId);
+      await setItemAsync('user_id', userId);
 
       setUser({
         id: userId,
@@ -117,10 +125,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await SecureStore.deleteItemAsync('user_id');
+      await deleteItemAsync('user_id');
       setUser(null);
       setHasWalletState(false);
-      await SecureStore.deleteItemAsync('hasWallet');
+      await deleteItemAsync('hasWallet');
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -152,7 +160,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const setHasWallet = async (hasWallet: boolean) => {
     setHasWalletState(hasWallet);
-    await SecureStore.setItemAsync('hasWallet', hasWallet.toString());
+    try {
+      await setItemAsync('hasWallet', hasWallet.toString());
+    } catch (error) {
+      console.error('Error setting hasWallet:', error);
+    }
   };
 
   const value: AuthContextType = {
