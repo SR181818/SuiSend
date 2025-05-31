@@ -125,12 +125,13 @@ const simpleHash = async (input: string): Promise<string> => {
 /**
  * Create a wallet from a mnemonic phrase
  */
-export const createWalletFromMnemonic = async (mnemonic: string): Promise<{ address: string; privateKey: string }> => {
+export const createWalletFromMnemonic = async (mnemonic?: string): Promise<{ address: string; privateKey: string; mnemonic: string }> => {
   try {
-    console.log('Creating wallet from mnemonic:', mnemonic);
+    const finalMnemonic = mnemonic || await generateMnemonic();
+    console.log('Creating wallet from mnemonic:', finalMnemonic);
     
     // Create a seed from the mnemonic
-    const seed = await simpleHash(mnemonic + 'seed');
+    const seed = await simpleHash(finalMnemonic + 'seed');
     console.log('Generated seed:', seed);
     
     // Use the seed as private key (first 64 chars)
@@ -145,6 +146,7 @@ export const createWalletFromMnemonic = async (mnemonic: string): Promise<{ addr
     return {
       address,
       privateKey,
+      mnemonic: finalMnemonic,
     };
   } catch (error) {
     console.error('Error creating wallet from mnemonic:', error);

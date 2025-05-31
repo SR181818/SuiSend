@@ -233,8 +233,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       setWallet(newWallet);
       await setItemAsync('wallet_data', JSON.stringify(newWallet));
-      await setItemAsync('private_key', walletData.privateKey);
-      await setItemAsync('mnemonic', walletData.mnemonic);
+      await setItemAsync('private_key', String(walletData.privateKey || ''));
+      await setItemAsync('mnemonic', String(walletData.mnemonic || ''));
     } catch (error) {
       console.error('Error creating wallet:', error);
       throw error;
@@ -257,7 +257,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       setWallet(newWallet);
       await setItemAsync('wallet_data', JSON.stringify(newWallet));
-      await setItemAsync('private_key', privateKey);
+      await setItemAsync('private_key', String(privateKey || ''));
     } catch (error) {
       console.error('Error importing wallet:', error);
       throw error;
