@@ -1,22 +1,17 @@
-
 import { Platform } from 'react-native';
 
-// Mock NFC for development/web platform
-const mockNFC = {
-  isSupported: () => Promise.resolve(false),
-  scanTag: () => Promise.reject(new Error('NFC not supported on this platform')),
-  writeTag: () => Promise.reject(new Error('NFC not supported on this platform')),
-  readTag: () => Promise.reject(new Error('NFC not supported on this platform')),
-};
+let NfcManager: any = null;
+let NfcTech: any = null;
 
-export interface NFCCardData {
-  id: string;
-  type: 'wallet_card';
-  walletAddress: string;
-  cardMode: 'sender' | 'receiver';
-  balance: number;
-  lastUpdated: number;
-  version: string;
+// Dynamically import NFC Manager only on native platforms
+if (Platform.OS !== 'web') {
+  try {
+    const nfcModule = require('react-native-nfc-manager');
+    NfcManager = nfcModule.default;
+    NfcTech = nfcModule.NfcTech;
+  } catch (error) {
+    console.log('NFC Manager not available:', error);
+  }
 }
 
 class NfcService {
@@ -24,7 +19,6 @@ class NfcService {
   private isScanning: boolean = false;
   private isWriting: boolean = false;
   private isInitialized: boolean = false;
-  private NfcManager: any = null;
 
   private constructor() {}
 
@@ -35,228 +29,122 @@ class NfcService {
     return NfcService.instance;
   }
 
-  private async initializeNfcManager(): Promise<void> {
-    if (Platform.OS === 'web' || this.isInitialized) {
+  async start(): Promise<void> {
+    if (Platform.OS === 'web') {
+      console.log('NFC not supported on web platform');
       return;
     }
 
+    if (!NfcManager) {
+      throw new Error('NFC Manager not available');
+    }
+
     try {
-      // Dynamically import NFC Manager
-      this.NfcManager = require('react-native-nfc-manager').default;
-      
-      // Initialize NFC Manager
-      await this.NfcManager.start();
-      this.isInitialized = true;
-      console.log('NFC Manager initialized successfully');
+      if (!this.isInitialized) {
+        await NfcManager.start();
+        this.isInitialized = true;
+        console.log('NFC Manager started successfully');
+      }
     } catch (error) {
-      console.log('NFC Manager not available or failed to initialize:', error);
-      this.NfcManager = null;
-      throw new Error('NFC not supported or failed to initialize');
+      console.error('Failed to start NFC Manager:', error);
+      throw error;
+    }
+  }
+
+  async stop(): Promise<void> {
+    if (Platform.OS === 'web' || !NfcManager) return;
+
+    try {
+      await NfcManager.stop();
+      this.isInitialized = false;
+      console.log('NFC Manager stopped');
+    } catch (error) {
+      console.error('Failed to stop NFC Manager:', error);
     }
   }
 
   async isSupported(): Promise<boolean> {
-    if (Platform.OS === 'web') return false;
-    
+    if (Platform.OS === 'web' || !NfcManager) return false;
+
     try {
-      await this.initializeNfcManager();
-      if (!this.NfcManager) return false;
-      return await this.NfcManager.isSupported();
+      return await NfcManager.isSupported();
     } catch (error) {
       console.log('NFC not supported:', error);
       return false;
     }
   }
 
-  async startScan(): Promise<any> {
-    if (this.isScanning || Platform.OS === 'web') {
-      throw new Error('Already scanning or NFC not supported');
+  async scanTag(): Promise<any> {
+    if (Platform.OS === 'web' || !NfcManager) {
+      throw new Error('NFC not supported');
     }
-    
-    this.isScanning = true;
+
     try {
-      if (Platform.OS === 'web') {
-        // Simulate NFC scan for web
-        return {
-          id: 'web_demo_card',
-          type: 'wallet_card',
-          walletAddress: '0x' + Math.random().toString(16).substring(2, 42),
-          cardMode: 'sender',
-          balance: 0,
-          lastUpdated: Date.now(),
-          version: '1.0'
-        };
-      }
-      
-      await this.initializeNfcManager();
-      if (!this.NfcManager) {
-        throw new Error('NFC Manager not available');
+      if (!this.isInitialized) {
+        await this.start();
       }
 
-      await this.NfcManager.requestTechnology([this.NfcManager.NfcTech.Ndef]);
-      const tag = await this.NfcManager.getTag();
-      
-      if (tag.ndefMessage && tag.ndefMessage.length > 0) {
-        const record = tag.ndefMessage[0];
-        const text = this.NfcManager.Ndef.text.decodePayload(record.payload);
-        return JSON.parse(text);
-      }
-      
+      this.isScanning = true;
+      await NfcManager.requestTechnology(NfcTech.Ndef);
+      const tag = await NfcManager.getTag();
+
       return tag;
     } catch (error) {
-      console.error('Error scanning NFC:', error);
+      console.error('Error scanning NFC tag:', error);
       throw error;
     } finally {
       this.isScanning = false;
-      try {
-        if (Platform.OS !== 'web' && this.NfcManager) {
-          await this.NfcManager.cancelTechnologyRequest();
-        }
-      } catch (e) {
-        // Ignore cleanup errors
-      }
+      await this.cleanup();
     }
   }
 
-  async createWalletCard(walletAddress: string, cardMode: 'sender' | 'receiver', balance: number = 0): Promise<NFCCardData> {
-    const cardData: NFCCardData = {
-      id: `card_${Date.now()}`,
-      type: 'wallet_card',
-      walletAddress,
-      cardMode,
-      balance,
-      lastUpdated: Date.now(),
-      version: '1.0'
-    };
-
-    if (Platform.OS === 'web') {
-      // Simulate card creation for web
-      console.log('🎴 Created NFC Card (Web Simulation):', cardData);
-      return cardData;
+  async writeTag(data: any): Promise<void> {
+    if (Platform.OS === 'web' || !NfcManager) {
+      throw new Error('NFC not supported');
     }
 
     try {
-      await this.writeCardData(cardData);
-      return cardData;
-    } catch (error) {
-      console.error('Error creating wallet card:', error);
-      throw error;
-    }
-  }
-
-  async writeCardData(cardData: NFCCardData): Promise<void> {
-    if (this.isWriting) {
-      throw new Error('Already writing to card');
-    }
-
-    this.isWriting = true;
-
-    if (Platform.OS === 'web') {
-      // Simulate writing for web
-      console.log('✍️ Writing to NFC Card (Web Simulation):', cardData);
-      this.isWriting = false;
-      return;
-    }
-    
-    try {
-      await this.initializeNfcManager();
-      if (!this.NfcManager) {
-        throw new Error('NFC Manager not available');
+      if (!this.isInitialized) {
+        await this.start();
       }
 
-      await this.NfcManager.requestTechnology([this.NfcManager.NfcTech.Ndef]);
-      
-      const bytes = this.NfcManager.Ndef.encodeMessage([
-        this.NfcManager.Ndef.textRecord(JSON.stringify(cardData))
-      ]);
-      
-      await this.NfcManager.writeNdefMessage(bytes);
-      console.log('✅ Successfully wrote wallet data to NFC card');
+      this.isWriting = true;
+      await NfcManager.requestTechnology(NfcTech.Ndef);
+
+      await NfcManager.writeNdefMessage([{
+        recordType: "text",
+        data: JSON.stringify(data)
+      }]);
+
+      console.log('Successfully wrote data to NFC tag');
     } catch (error) {
-      console.error('Error writing to NFC card:', error);
+      console.error('Error writing to NFC tag:', error);
       throw error;
     } finally {
       this.isWriting = false;
-      try {
-        if (this.NfcManager) {
-          await this.NfcManager.cancelTechnologyRequest();
-        }
-      } catch (e) {
-        // Ignore cleanup errors
-      }
+      await this.cleanup();
     }
   }
 
-  async readCard(): Promise<NFCCardData> {
-    if (Platform.OS === 'web') {
-      // Return mock data for web
-      return {
-        id: 'web_demo_card',
-        type: 'wallet_card',
-        walletAddress: '0x' + Math.random().toString(16).substring(2, 42),
-        cardMode: 'sender',
-        balance: 0,
-        lastUpdated: Date.now(),
-        version: '1.0'
-      };
-    }
-    
-    try {
-      await this.initializeNfcManager();
-      if (!this.NfcManager) {
-        throw new Error('NFC Manager not available');
-      }
+  private async cleanup(): Promise<void> {
+    if (Platform.OS === 'web' || !NfcManager) return;
 
-      await this.NfcManager.requestTechnology([this.NfcManager.NfcTech.Ndef]);
-      const tag = await this.NfcManager.getTag();
-      
-      if (tag.ndefMessage && tag.ndefMessage.length > 0) {
-        const record = tag.ndefMessage[0];
-        const text = this.NfcManager.Ndef.text.decodePayload(record.payload);
-        return JSON.parse(text);
-      }
-      
-      throw new Error('No wallet data found on NFC tag');
+    try {
+      await NfcManager.cancelTechnologyRequest();
     } catch (error) {
-      console.error('Error reading NFC card:', error);
-      throw error;
-    } finally {
-      try {
-        if (this.NfcManager) {
-          await this.NfcManager.cancelTechnologyRequest();
-        }
-      } catch (e) {
-        // Ignore cleanup errors
-      }
+      // Ignore cleanup errors
     }
   }
 
-  async updateCardBalance(cardId: string, newBalance: number): Promise<void> {
-    if (Platform.OS === 'web') {
-      console.log(`💰 Updated card ${cardId} balance to ${newBalance} (Web Simulation)`);
-      return;
-    }
-    
-    try {
-      const cardData = await this.readCard();
-      cardData.balance = newBalance;
-      cardData.lastUpdated = Date.now();
-      await this.writeCardData(cardData);
-    } catch (error) {
-      console.error('Error updating card balance:', error);
-      throw error;
-    }
+  isCurrentlyScanning(): boolean {
+    return this.isScanning;
   }
 
-  async cleanup(): Promise<void> {
-    if (Platform.OS === 'web' || !this.isInitialized || !this.NfcManager) return;
-
-    try {
-      await this.NfcManager.cancelTechnologyRequest();
-    } catch (error) {
-      console.warn('Failed to cleanup NFC:', error);
-    }
+  isCurrentlyWriting(): boolean {
+    return this.isWriting;
   }
 }
 
-export default NfcService.getInstance();
+// Export the singleton instance
+const nfcService = NfcService.getInstance();
+export default nfcService;
