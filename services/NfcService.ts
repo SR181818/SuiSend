@@ -1,14 +1,6 @@
 
 import { Platform } from 'react-native';
 
-// Mock NFC for development/web platform
-const mockNFC = {
-  isSupported: () => Promise.resolve(false),
-  scanTag: () => Promise.reject(new Error('NFC not supported on this platform')),
-  writeTag: () => Promise.reject(new Error('NFC not supported on this platform')),
-  readTag: () => Promise.reject(new Error('NFC not supported on this platform')),
-};
-
 export interface NFCCardData {
   id: string;
   type: 'wallet_card';
@@ -25,6 +17,7 @@ class NfcService {
   private isWriting: boolean = false;
   private isInitialized: boolean = false;
   private NfcManager: any = null;
+  private tagEventListener: ((tag: any) => void) | null = null;
 
   private constructor() {}
 
@@ -42,7 +35,8 @@ class NfcService {
 
     try {
       // Dynamically import NFC Manager
-      this.NfcManager = require('react-native-nfc-manager').default;
+      const NfcManagerModule = require('react-native-nfc-manager');
+      this.NfcManager = NfcManagerModule.default;
       
       // Initialize NFC Manager
       await this.NfcManager.start();
@@ -68,13 +62,84 @@ class NfcService {
     }
   }
 
+  async start(): Promise<void> {
+    if (Platform.OS === 'web') {
+      console.log('NFC started (Web simulation)');
+      return;
+    }
+
+    try {
+      await this.initializeNfcManager();
+      if (!this.NfcManager) {
+        throw new Error('NFC Manager not available');
+      }
+      console.log('NFC service started successfully');
+    } catch (error) {
+      console.error('Error starting NFC service:', error);
+      throw error;
+    }
+  }
+
+  async stop(): Promise<void> {
+    if (Platform.OS === 'web' || !this.isInitialized || !this.NfcManager) {
+      return;
+    }
+
+    try {
+      await this.NfcManager.cancelTechnologyRequest();
+      this.unregisterTagEvent();
+    } catch (error) {
+      console.warn('Error stopping NFC service:', error);
+    }
+  }
+
+  registerTagEvent(callback: (tag: any) => void): void {
+    if (Platform.OS === 'web') {
+      console.log('Tag event registered (Web simulation)');
+      this.tagEventListener = callback;
+      return;
+    }
+
+    if (!this.NfcManager) {
+      console.warn('NFC Manager not initialized');
+      return;
+    }
+
+    this.tagEventListener = callback;
+    
+    // Register for tag discovery events
+    this.NfcManager.setEventListener('NfcManagerDiscoverTag', (tag: any) => {
+      if (this.tagEventListener) {
+        this.tagEventListener(tag);
+      }
+    });
+
+    // Start tag discovery
+    this.NfcManager.registerTagEvent().catch((error: any) => {
+      console.error('Failed to register tag event:', error);
+    });
+  }
+
+  unregisterTagEvent(): void {
+    if (Platform.OS === 'web') {
+      console.log('Tag event unregistered (Web simulation)');
+      this.tagEventListener = null;
+      return;
+    }
+
+    if (!this.NfcManager) return;
+
+    try {
+      this.NfcManager.setEventListener('NfcManagerDiscoverTag', null);
+      this.NfcManager.unregisterTagEvent();
+      this.tagEventListener = null;
+    } catch (error) {
+      console.warn('Error unregistering tag event:', error);
+    }
+  }
+
   async startScan(): Promise<any> {
     if (this.isScanning || Platform.OS === 'web') {
-      throw new Error('Already scanning or NFC not supported');
-    }
-    
-    this.isScanning = true;
-    try {
       if (Platform.OS === 'web') {
         // Simulate NFC scan for web
         return {
@@ -87,7 +152,11 @@ class NfcService {
           version: '1.0'
         };
       }
-      
+      throw new Error('Already scanning or NFC not supported');
+    }
+    
+    this.isScanning = true;
+    try {
       await this.initializeNfcManager();
       if (!this.NfcManager) {
         throw new Error('NFC Manager not available');
@@ -253,6 +322,7 @@ class NfcService {
 
     try {
       await this.NfcManager.cancelTechnologyRequest();
+      this.unregisterTagEvent();
     } catch (error) {
       console.warn('Failed to cleanup NFC:', error);
     }
