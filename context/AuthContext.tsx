@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -7,6 +6,7 @@ interface User {
   id: string;
   email?: string;
   isAuthenticated: boolean;
+  hasWallet: boolean;
 }
 
 interface AuthContextType {
@@ -18,6 +18,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   authenticateWithBiometrics: () => Promise<boolean>;
   checkBiometricAvailability: () => Promise<boolean>;
+  hasWallet: boolean;
+  setHasWallet: (hasWallet: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthRequired, setIsAuthRequiredState] = useState(false);
+  const [hasWallet, setHasWalletState] = useState<boolean>(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -47,13 +50,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const authRequired = await SecureStore.getItemAsync('auth_required');
       setIsAuthRequiredState(authRequired === 'true');
-      
+
+      const hasWalletStored = await SecureStore.getItemAsync('hasWallet');
+      setHasWalletState(hasWalletStored === 'true');
+
       if (authRequired === 'true') {
         const userId = await SecureStore.getItemAsync('user_id');
         if (userId) {
           setUser({
             id: userId,
             isAuthenticated: true,
+            hasWallet: hasWalletStored === 'true',
           });
         }
       } else {
@@ -61,6 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser({
           id: 'default_user',
           isAuthenticated: true,
+          hasWallet: hasWalletStored === 'true',
         });
       }
     } catch (error) {
@@ -74,11 +82,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await SecureStore.setItemAsync('auth_required', required.toString());
       setIsAuthRequiredState(required);
-      
+
       if (!required) {
         setUser({
           id: 'default_user',
           isAuthenticated: true,
+          hasWallet: hasWallet,
         });
       }
     } catch (error) {
@@ -91,11 +100,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const userId = email || `user_${Date.now()}`;
       await SecureStore.setItemAsync('user_id', userId);
-      
+
       setUser({
         id: userId,
         email,
         isAuthenticated: true,
+        hasWallet: hasWallet,
       });
     } catch (error) {
       console.error('Error during login:', error);
@@ -109,6 +119,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await SecureStore.deleteItemAsync('user_id');
       setUser(null);
+      setHasWalletState(false);
+      await SecureStore.deleteItemAsync('hasWallet');
     } catch (error) {
       console.error('Error during logout:', error);
     }
@@ -138,6 +150,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const setHasWallet = async (hasWallet: boolean) => {
+    setHasWalletState(hasWallet);
+    await SecureStore.setItemAsync('hasWallet', hasWallet.toString());
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -147,6 +164,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     authenticateWithBiometrics,
     checkBiometricAvailability,
+    hasWallet,
+    setHasWallet,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
