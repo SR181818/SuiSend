@@ -1,97 +1,121 @@
+
 import React, { createContext, useContext, ReactNode } from 'react';
 
 interface Theme {
-  primary: string;
-  background: string;
-  text: string;
-  secondary: string;
-  textSecondary: string;
-  textTertiary: string;
-  border: string;
-  card: string;
-  success: string;
-  warning: string;
-  error: string;
   colors: {
     primary: string;
-    primaryDark: string;
-    primaryLight: string;
     secondary: string;
-    secondaryDark: string;
-    secondaryLight: string;
-    accent: string;
-    accentDark: string;
-    accentLight: string;
+    background: string;
+    surface: string;
+    text: string;
+    textSecondary: string;
     success: string;
     warning: string;
     error: string;
-    background: string;
-    backgroundDark: string;
-    backgroundLight: string;
-    text: string;
-    textSecondary: string;
-    textTertiary: string;
     border: string;
-    gray: string;
-    grayDark: string;
-    white: string;
-    black: string;
+  };
+  spacing: {
+    xs: number;
+    sm: number;
+    md: number;
+    lg: number;
+    xl: number;
+  };
+  borderRadius: {
+    sm: number;
+    md: number;
+    lg: number;
   };
 }
 
-const defaultTheme: Theme = {
-  primary: '#667eea',
-  background: '#000000',
-  text: '#ffffff',
-  secondary: '#764ba2',
-  textSecondary: '#cccccc',
-  textTertiary: '#999999',
-  border: '#333333',
-  card: '#1a1a1a',
-  success: '#10b981',
-  warning: '#f59e0b',
-  error: '#ef4444',
+const lightTheme: Theme = {
   colors: {
-    primary: '#667eea',
-    primaryDark: '#5a67d8',
-    primaryLight: '#7c3aed',
-    secondary: '#764ba2',
-    secondaryDark: '#6b46c1',
-    secondaryLight: '#8b5cf6',
-    accent: '#f59e0b',
-    accentDark: '#d97706',
-    accentLight: '#fbbf24',
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    background: '#000000',
-    backgroundDark: '#0a0a0a',
-    backgroundLight: '#1a1a1a',
-    text: '#ffffff',
-    textSecondary: '#cccccc',
-    textTertiary: '#999999',
-    border: '#333333',
-    gray: '#6b7280',
-    grayDark: '#4b5563',
-    white: '#ffffff',
-    black: '#000000',
+    primary: '#007AFF',
+    secondary: '#5856D6',
+    background: '#FFFFFF',
+    surface: '#F2F2F7',
+    text: '#000000',
+    textSecondary: '#8E8E93',
+    success: '#34C759',
+    warning: '#FF9500',
+    error: '#FF3B30',
+    border: '#C6C6C8',
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
   },
 };
 
-const ThemeContext = createContext<Theme>(defaultTheme);
-
-export const useTheme = () => {
-  return { theme: useContext(ThemeContext) };
+const darkTheme: Theme = {
+  colors: {
+    primary: '#0A84FF',
+    secondary: '#5E5CE6',
+    background: '#000000',
+    surface: '#1C1C1E',
+    text: '#FFFFFF',
+    textSecondary: '#8E8E93',
+    success: '#30D158',
+    warning: '#FF9F0A',
+    error: '#FF453A',
+    border: '#38383A',
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+  },
 };
+
+interface ThemeContextType {
+  theme: Theme;
+  isDark: boolean;
+  toggleTheme: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const [isDark, setIsDark] = React.useState(false);
+
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+  };
+
+  const theme = isDark ? darkTheme : lightTheme;
+
   return (
-    <ThemeContext.Provider value={defaultTheme}>
+    <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
 };
+
+export const useTheme = (): ThemeContextType => {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+export { lightTheme, darkTheme };
