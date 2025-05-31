@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getItemAsync, setItemAsync } from '@/utils/storage';
 
@@ -41,7 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const onboardingStatus = await getItemAsync('onboarding_complete');
       const walletData = await getItemAsync('wallet_data');
-      
+
       setIsOnboardingCompleteState(onboardingStatus === 'true');
       setHasWalletState(!!walletData);
     } catch (error) {
