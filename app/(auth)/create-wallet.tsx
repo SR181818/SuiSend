@@ -100,7 +100,7 @@ export default function CreateWalletScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => router.back()}
@@ -112,7 +112,11 @@ export default function CreateWalletScreen() {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.mnemonicSection}>
           <View style={styles.mnemonicHeader}>
             <Text style={[styles.mnemonicTitle, { color: theme.colors.text }]}>
@@ -179,7 +183,7 @@ export default function CreateWalletScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.colors.background }]}>
         <LinearGradientButton
           onPress={handleCreateWallet}
           disabled={!allConfirmed || isLoading}
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 120, // Increased bottom padding for button space
   },
   mnemonicSection: {
     marginBottom: 24,
@@ -286,7 +290,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 16,
     paddingBottom: 32,
+    backgroundColor: 'transparent',
   },
 });
