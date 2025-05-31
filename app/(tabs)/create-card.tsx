@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
-import { CreditCard, Smartphone, AlertCircle } from 'lucide-react-native';
+import { CreditCard, Smartphone, CircleAlert as AlertCircle } from 'lucide-react-native';
 import NfcService from '@/services/NfcService';
 import LinearGradientButton from '@/components/common/LinearGradientButton';
 
