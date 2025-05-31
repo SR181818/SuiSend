@@ -3,11 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "dev": "expo start",
+    "dev": "expo start --web --port 5000 --no-dev-client",
     "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "test": "jest"
+    "ios": "expo start --ios", 
+    "web": "expo start --web --port 5000",
+    "test": "jest --maxWorkers=1"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

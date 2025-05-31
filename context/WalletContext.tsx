@@ -84,7 +84,7 @@ interface WalletProviderProps {
   children: ReactNode;
 }
 
-import { setItemAsync, getItemAsync, deleteItemAsync } from '@/utils/storage';
+import { setItemAsync, getItemAsync, deleteItemAsync } from '../utils/storage';
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
