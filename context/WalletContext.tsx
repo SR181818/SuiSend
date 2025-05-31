@@ -93,8 +93,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
   const [isOnline, setIsOnline] = useState(true);
   const [isNfcListening, setIsNfcListening] = useState(false);
-    // Instantiate NfcService here
-  const nfcService = new NfcService();
 
   // Load saved settings on app start
   useEffect(() => {
@@ -284,11 +282,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const startNfcListening = async () => {
     try {
-      await nfcService.start();
+      await NfcService.start();
       setIsNfcListening(true);
 
       // Start listening for NFC tags
-      nfcService.registerTagEvent((tag) => {
+      NfcService.registerTagEvent((tag) => {
         handleNfcTagDetected(tag);
       });
     } catch (error) {
@@ -298,7 +296,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const stopNfcListening = () => {
-    nfcService.unregisterTagEvent();
+    NfcService.unregisterTagEvent();
     setIsNfcListening(false);
   };
 
