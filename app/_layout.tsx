@@ -6,9 +6,9 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_7
 import { SplashScreen } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { View, StyleSheet, Platform } from 'react-native';
-import { WalletProvider } from '@/context/WalletContext';
-import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { ThemeProvider } from '../context/ThemeContext';
+import { WalletProvider } from '../context/WalletContext';
+import { AuthProvider } from '../context/AuthContext';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
