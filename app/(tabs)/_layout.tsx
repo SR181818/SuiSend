@@ -1,7 +1,6 @@
-
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Home, CreditCard, TrendingUp, Settings, Bell } from 'lucide-react-native';
+import { Home, CreditCard, TrendingUp, Settings, Bell, Plus } from 'lucide-react-native';
 import TabBarIcon from '@/components/navigation/TabBarIcon';
 
 export default function TabLayout() {
@@ -33,6 +32,15 @@ export default function TabLayout() {
           title: 'Cards',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon icon={CreditCard} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="create-card"
+        options={{
+          title: 'Create Card',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon icon={Plus} color={color} focused={focused} />
           ),
         }}
       />

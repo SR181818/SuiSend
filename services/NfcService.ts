@@ -1,158 +1,116 @@
 import { Platform } from 'react-native';
-import { Alert } from 'react-native';
-
-// Mock NFC data for web testing
-const mockNfcData = {
-  id: 'mock-nfc-tag',
-  type: 'NTAG215',
-  data: {
-    balance: 100,
-    lastTransaction: Date.now(),
-  }
-};
+import NfcManager, { NfcTech, Ndef, TagEvent } from 'react-native-nfc-manager';
 
 class NfcService {
-  private isSupported: boolean;
-  private isInitialized: boolean;
-  private mockMode: boolean;
+  private static instance: NfcService;
+  private isInitialized = false;
 
-  constructor() {
-    this.isSupported = Platform.OS !== 'web';
-    this.isInitialized = false;
-    this.mockMode = Platform.OS === 'web';
+  private constructor() {}
+
+  static getInstance(): NfcService {
+    if (!NfcService.instance) {
+      NfcService.instance = new NfcService();
+    }
+    return NfcService.instance;
   }
 
-  async start(): Promise<boolean> {
-    if (this.mockMode) {
-      console.log('Starting NFC in mock mode (web)');
-      this.isInitialized = true;
-      return true;
+  async initialize(): Promise<boolean> {
+    if (Platform.OS === 'web') {
+      console.log('NFC not supported on web');
+      return false;
     }
 
     try {
-      // In a real app, we would initialize react-native-nfc-manager here
+      const supported = await NfcManager.isSupported();
+      if (!supported) {
+        console.warn('NFC not supported on this device');
+        return false;
+      }
+
+      await NfcManager.start();
       this.isInitialized = true;
+      console.log('NFC initialized successfully');
       return true;
     } catch (error) {
-      console.error('Failed to start NFC:', error);
+      console.error('Error initializing NFC:', error);
       return false;
     }
   }
 
-  async stop(): Promise<void> {
-    if (!this.isInitialized) return;
+  async writeWalletCard(address: string, mode: 'sender' | 'receiver', balance: number): Promise<boolean> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
 
     try {
-      if (!this.mockMode) {
-        // In a real app, cleanup NFC manager
+      await NfcManager.requestTechnology(NfcTech.Ndef);
+
+      const bytes = Ndef.encodeMessage([
+        Ndef.textRecord(JSON.stringify({
+          address,
+          mode,
+          balance,
+          timestamp: Date.now()
+        }))
+      ]);
+
+      if (bytes) {
+        await NfcManager.ndefHandler.writeNdefMessage(bytes);
+        console.log('Successfully wrote to NFC card');
+        return true;
       }
-      this.isInitialized = false;
+      return false;
+    } catch (error) {
+      console.error('Error writing to NFC card:', error);
+      return false;
+    } finally {
+      this.cleanUp();
+    }
+  }
+
+  async readWalletCard(): Promise<any> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    try {
+      await NfcManager.requestTechnology(NfcTech.Ndef);
+      const tag = await NfcManager.getTag();
+      if (!tag) throw new Error('No tag found');
+
+      const ndef = await NfcManager.ndefHandler.getNdefMessage();
+      if (!ndef) throw new Error('No NDEF message found');
+
+      const decoded = Ndef.text.decodePayload(ndef.records[0].payload);
+      return JSON.parse(decoded);
+    } catch (error) {
+      console.error('Error reading NFC card:', error);
+      throw error;
+    } finally {
+      this.cleanUp();
+    }
+  }
+
+  private async cleanUp(): Promise<void> {
+    try {
+      await NfcManager.cancelTechnologyRequest();
+    } catch (error) {
+      console.warn('Error during cleanup:', error);
+    }
+  }
+
+  async stop(): Promise<void> {
+    try {
+      await NfcManager.cancelTechnologyRequest();
+      await NfcManager.unregisterTagEvent();
+      if (this.isInitialized) {
+        await NfcManager.stop();
+        this.isInitialized = false;
+      }
     } catch (error) {
       console.error('Error stopping NFC:', error);
     }
   }
-
-  async createWalletCard(address: string, mode: 'sender' | 'receiver', balance: number): Promise<any> {
-    if (!this.isInitialized) {
-      throw new Error('NFC not initialized');
-    }
-
-    const cardData = {
-      id: `card_${Date.now()}`,
-      address,
-      mode,
-      balance,
-      created: Date.now()
-    };
-
-    if (this.mockMode) {
-      console.log('Creating mock wallet card:', cardData);
-      return cardData;
-    }
-
-    try {
-      // In a real app, write to NFC tag
-      return cardData;
-    } catch (error) {
-      console.error('Error creating wallet card:', error);
-      throw error;
-    }
-  }
-
-  async readCard(): Promise<any> {
-    if (!this.isInitialized) {
-      throw new Error('NFC not initialized');
-    }
-
-    if (this.mockMode) {
-      console.log('Reading mock NFC card');
-      return mockNfcData;
-    }
-
-    try {
-      // In a real app, read from NFC tag
-      return mockNfcData;
-    } catch (error) {
-      console.error('Error reading NFC card:', error);
-      throw error;
-    }
-  }
-
-  async writeWalletToCard(userId: string, walletData: any): Promise<void> {
-    if (!this.isInitialized) {
-      throw new Error('NFC not initialized');
-    }
-
-    if (this.mockMode) {
-      console.log('Writing mock wallet data:', { userId, walletData });
-      return;
-    }
-
-    try {
-      // In a real app, write wallet data to NFC tag
-      console.log('Wallet data written to card');
-    } catch (error) {
-      console.error('Error writing wallet to card:', error);
-      throw error;
-    }
-  }
-
-  async updateCardBalance(cardId: string, newBalance: number): Promise<void> {
-    if (!this.isInitialized) {
-      throw new Error('NFC not initialized');
-    }
-
-    if (this.mockMode) {
-      console.log('Updating mock card balance:', { cardId, newBalance });
-      return;
-    }
-
-    try {
-      // In a real app, update balance on NFC tag
-      console.log('Card balance updated');
-    } catch (error) {
-      console.error('Error updating card balance:', error);
-      throw error;
-    }
-  }
-
-  unregisterTagEvent(): void {
-    if (!this.isInitialized || this.mockMode) return;
-
-    try {
-      // In a real app, unregister NFC tag event listeners
-    } catch (error) {
-      console.error('Error unregistering tag event:', error);
-    }
-  }
-
-  isNfcSupported(): boolean {
-    return this.isSupported;
-  }
-
-  isNfcEnabled(): boolean {
-    return this.isInitialized;
-  }
 }
 
-export default new NfcService();
+export default NfcService.getInstance();
