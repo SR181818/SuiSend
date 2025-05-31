@@ -1,0 +1,40 @@
+~/workspace$ rm -rf node_modules package-lock.json yarn.lock
+~/workspace$ yarn
+yarn install v1.22.22
+warning package.json: No license field
+info No lockfile found.
+warning nfc-payment-wallet@1.0.0: No license field
+[1/4] Resolving packages...
+warning @expo/webpack-config > source-map-loader > abab@2.0.6: Use your platform's native atob() and btoa() methods instead
+warning @expo/webpack-config > webpack-dev-server > rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+warning @expo/webpack-config > clean-webpack-plugin > del > rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+warning @expo/webpack-config > clean-webpack-plugin > del > globby > glob@7.2.3: Glob versions prior to v9 are no longer supported
+warning @expo/webpack-config > webpack-dev-server > rimraf > glob@7.2.3: Glob versions prior to v9 are no longer supported
+warning @expo/webpack-config > clean-webpack-plugin > del > rimraf > glob@7.2.3: Glob versions prior to v9 are no longer supported
+warning @expo/webpack-config > webpack-dev-server > webpack-dev-middleware > memfs@3.6.0: this will be v4
+warning @expo/webpack-config > clean-webpack-plugin > del > globby > glob > inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+warning @expo/webpack-config > css-minimizer-webpack-plugin > cssnano > cssnano-preset-default > postcss-svgo > svgo > stable@0.1.8: Modern JS already guarantees Array#sort() is a stable sort, so this library is deprecated. See the compatibility table on MDN: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#browser_compatibility
+warning expo > @expo/cli > @react-native/dev-middleware > chromium-edge-launcher > rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+warning expo > babel-preset-expo > @react-native/babel-preset > @react-native/babel-plugin-codegen > @react-native/codegen > glob@7.2.3: Glob versions prior to v9 are no longer supported
+warning react-native > glob@7.2.3: Glob versions prior to v9 are no longer supported
+warning react-native > @react-native/codegen > glob@7.2.3: Glob versions prior to v9 are no longer supported
+warning react-native > babel-jest > babel-plugin-istanbul > test-exclude > glob@7.2.3: Glob versions prior to v9 are no longer supported
+[2/4] Fetching packages...
+[3/4] Linking dependencies...
+warning " > @expo/webpack-config@19.0.1" has incorrect peer dependency "expo@^49.0.7 || ^50.0.0-0".
+warning " > expo-router@5.0.7" has unmet peer dependency "expo-constants@*".
+warning " > lucide-react-native@0.475.0" has incorrect peer dependency "react@^16.5.1 || ^17.0.0 || ^18.0.0".
+[4/4] Building fresh packages...
+
+success Saved lockfile.
+Done in 24.68s.
+~/workspace$ yarn dev
+yarn run v1.22.22
+warning package.json: No license field
+$ expo start
+error Error: spawn /bin/sh EAGAIN
+    at ChildProcess._handle.onexit (node:internal/child_process:285:19)
+    at onErrorNT (node:internal/child_process:483:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+~/workspace$ 
