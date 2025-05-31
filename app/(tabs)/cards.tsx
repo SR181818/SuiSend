@@ -4,8 +4,9 @@ import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
-import { CreditCard, Smartphone, Wifi, WifiOff, Radio } from 'lucide-react-native';
+import { CreditCard, Smartphone, Wifi, WifiOff, Radio, Plus } from 'lucide-react-native';
 import LinearGradientButton from '@/components/common/LinearGradientButton';
+import NfcService from '@/services/NfcService';
 
 export default function CardsScreen() {
   const { theme } = useTheme();
@@ -30,6 +31,36 @@ export default function CardsScreen() {
       isNfcActive ? 'NFC Disabled' : 'NFC Enabled',
       isNfcActive ? 'Your device is no longer listening for NFC taps' : 'Your device is now listening for NFC taps'
     );
+  };
+
+  const createNfcCard = async () => {
+    if (!walletInfo?.cardMode) {
+      Alert.alert('Card Mode Required', 'Please select a card mode (sender or receiver) first');
+      return;
+    }
+
+    if (!walletInfo?.address) {
+      Alert.alert('Wallet Required', 'No wallet address found');
+      return;
+    }
+
+    try {
+      const cardData = await NfcService.createWalletCard(
+        walletInfo.address,
+        walletInfo.cardMode,
+        walletInfo.balance || 0
+      );
+
+      Alert.alert(
+        '🎴 NFC Card Created!',
+        `Successfully created ${walletInfo.cardMode} card with ID: ${cardData.id}\n\nPlace an NFC tag near your device to write the wallet data.`,
+        [
+          { text: 'OK', style: 'default' }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', `Failed to create NFC card: ${error.message}`);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -195,6 +226,15 @@ export default function CardsScreen() {
         </View>
 
         <View style={styles.nfcSection}>
+          <Text style={styles.sectionTitle}>NFC Card Management</Text>
+          
+          <LinearGradientButton
+            onPress={createNfcCard}
+            colors={[theme.colors.primary, theme.colors.primaryDark]}
+            label="Create NFC Card"
+            icon={<Plus size={20} color="white" />}
+          />
+
           <Text style={styles.sectionTitle}>NFC Status</Text>
           
           <TouchableOpacity

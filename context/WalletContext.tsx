@@ -471,24 +471,30 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const value: WalletContextType = {
-    wallet,
-    isLoading,
-    cardMode,
-    setCardMode,
-    appMode,
-    setAppMode,
-    pendingTransactions,
-    startNfcListening,
-    stopNfcListening,
-    performNfcTransaction,
-    processPendingTransactions,
-    createOfflineTransaction,
-    createWallet,
-    importWallet,
-    clearWallet,
-    isOnline,
-  };
-
-  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
+  return (
+    <WalletContext.Provider value={{
+      wallet,
+      walletInfo: wallet,
+      cardMode,
+      setCardMode,
+      appMode,
+      setAppMode,
+      isOnline,
+      isOnlineMode: isOnline,
+      toggleOnlineMode: () => setIsOnline(!isOnline),
+      pendingTransactions,
+      startNfcListening,
+      stopNfcListening,
+      processPendingTransactions,
+      processNfcTransaction: async (transactionData, amount) => {
+        const newTransaction: PendingTransaction = {
+          ...transactionData,
+          amount,
+        };
+        setPendingTransactions(prev => [...prev, newTransaction]);
+      }
+    }}>
+      {children}
+    </WalletContext.Provider>
+  );
 };
