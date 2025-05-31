@@ -1,0 +1,137 @@
+Uncaught Error
+Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `TabBarIcon`.
+Source
+ 
+ 11 |
+ }
+ 
+ 12 |
+>
+ 13 |
+ 
+const
+ 
+TabBarIcon
+:
+ 
+React
+.
+FC
+<
+TabBarIconProps
+>
+ 
+=
+ ({ icon
+,
+ color
+,
+ size
+,
+ focused }) 
+=>
+ {
+ 
+    |
+                                                  
+^
+ 
+ 14 |
+   
+const
+ 
+IconComponent
+ 
+=
+ icon
+;
+ 
+ 15 |
+   
+ 
+ 16 |
+   
+return
+ (
+Call Stack
+createFiberFromTypeAndProps
+node_modules/react-dom/cjs/react-dom-client.development.js:13350:28
+createFiberFromElement
+node_modules/react-dom/cjs/react-dom-client.development.js:13364:14
+reconcileChildFibersImpl
+node_modules/react-dom/cjs/react-dom-client.development.js:5238:31
+<anonymous>
+node_modules/react-dom/cjs/react-dom-client.development.js:5415:33
+reconcileChildren
+node_modules/react-dom/cjs/react-dom-client.development.js:7738:13
+beginWork
+node_modules/react-dom/cjs/react-dom-client.development.js:9951:13
+runWithFiberInDEV
+node_modules/react-dom/cjs/react-dom-client.development.js:543:16
+performUnitOfWork
+node_modules/react-dom/cjs/react-dom-client.development.js:15044:22
+workLoopSync
+node_modules/react-dom/cjs/react-dom-client.development.js:14870:41
+renderRootSync
+node_modules/react-dom/cjs/react-dom-client.development.js:14850:11
+performWorkOnRoot
+node_modules/react-dom/cjs/react-dom-client.development.js:14384:44
+performSyncWorkOnRoot
+node_modules/react-dom/cjs/react-dom-client.development.js:15946:7
+flushSyncWorkAcrossRoots_impl
+node_modules/react-dom/cjs/react-dom-client.development.js:15807:21
+processRootScheduleInMicrotask
+node_modules/react-dom/cjs/react-dom-client.development.js:15841:7
+scheduleMicrotask$argument_0
+node_modules/react-dom/cjs/react-dom-client.development.js:15962:13
+Collapse all 15 frames
+Component Stack
+div
+<anonymous>:-1:0
+TabBarIcon
+components/navigation/TabBarIcon.tsx:13:50
+div
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+a
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+TabLayout
+app/(tabs)/_layout.tsx:8:29
+div
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+div
+<anonymous>:-1:0
+WalletProvider
+context/WalletContext.tsx:89:65
+AuthProvider
+context/AuthContext.tsx:39:61
+ThemeProvider
+context/ThemeContext.tsx:97:63
+div
+<anonymous>:-1:0
+RootLayout
+app/_layout.tsx:17:20
+div
+<anonymous>:-1:0
+App
+<anonymous>:-1:0
+ErrorOverlay
+<anonymous>:-1:0
+withDevTools(ErrorOverlay)
+<anonymous>:-1:0
+See 68 more frames
