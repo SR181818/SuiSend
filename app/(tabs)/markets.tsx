@@ -77,12 +77,12 @@ export default function MarketsScreen() {
         <Text style={[styles.title, { color: theme.colors.text }]}>Markets</Text>
         
         {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: theme.colors.backgroundLight }]}>
+        <View style={[styles.searchContainer, { backgroundColor: theme.colors.backgroundLight || theme.colors.surface }]}>
           <Search color={theme.colors.textSecondary} size={20} />
           <TextInput
             style={[styles.searchInput, { color: theme.colors.text }]}
             placeholder="Search coins..."
-            placeholderTextColor={theme.colors.textTertiary}
+            placeholderTextColor={theme.colors.textSecondary}
             value={searchQuery}
             onChangeText={handleSearch}
           />

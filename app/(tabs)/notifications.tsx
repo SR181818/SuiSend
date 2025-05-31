@@ -112,7 +112,7 @@ export default function NotificationsScreen() {
                 entering={FadeIn.delay(100)}
                 style={styles.emptyContainer}
               >
-                <View style={[styles.emptyIconContainer, { backgroundColor: theme.colors.backgroundLight }]}>
+                <View style={[styles.emptyIconContainer, { backgroundColor: theme.colors.backgroundLight || theme.colors.surface }]}>
                   <BellOff color={theme.colors.textSecondary} size={32} />
                 </View>
                 <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
@@ -134,7 +134,7 @@ export default function NotificationsScreen() {
         </>
       ) : (
         <View style={styles.disabledContainer}>
-          <View style={[styles.disabledIconContainer, { backgroundColor: theme.colors.backgroundLight }]}>
+          <View style={[styles.disabledIconContainer, { backgroundColor: theme.colors.backgroundLight || theme.colors.surface }]}>
             <BellOff color={theme.colors.textSecondary} size={40} />
           </View>
           <Text style={[styles.disabledTitle, { color: theme.colors.text }]}>

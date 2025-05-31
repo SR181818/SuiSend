@@ -1,6 +1,13 @@
-import * as NFC from 'expo-nfc';
+
 import { Platform } from 'react-native';
-import { getCardData, updateCard, createCard } from '@/utils/api';
+
+// Mock NFC for development/web platform
+const mockNFC = {
+  isSupported: () => Promise.resolve(false),
+  scanTag: () => Promise.reject(new Error('NFC not supported on this platform')),
+  writeTag: () => Promise.reject(new Error('NFC not supported on this platform')),
+  readTag: () => Promise.reject(new Error('NFC not supported on this platform')),
+};
 
 class NfcService {
   private static instance: NfcService;
@@ -17,7 +24,15 @@ class NfcService {
 
   async isSupported(): Promise<boolean> {
     if (Platform.OS === 'web') return false;
-    return await NFC.isSupported();
+    
+    try {
+      // Try to import react-native-nfc-manager
+      const NfcManager = require('react-native-nfc-manager');
+      return await NfcManager.isSupported();
+    } catch (error) {
+      console.log('NFC Manager not available:', error);
+      return false;
+    }
   }
 
   async startScan(): Promise<void> {
@@ -25,64 +40,98 @@ class NfcService {
     
     this.isScanning = true;
     try {
-      await NFC.scanTag();
+      if (Platform.OS === 'web') {
+        throw new Error('NFC not supported on web platform');
+      }
+      
+      const NfcManager = require('react-native-nfc-manager');
+      await NfcManager.requestTechnology([NfcManager.NfcTech.Ndef]);
+      const tag = await NfcManager.getTag();
+      return tag;
     } catch (error) {
       console.error('Error scanning NFC:', error);
       throw error;
     } finally {
       this.isScanning = false;
+      try {
+        const NfcManager = require('react-native-nfc-manager');
+        await NfcManager.cancelTechnologyRequest();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
     }
   }
 
   async writeWalletToCard(userId: string, walletData: any): Promise<void> {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === 'web') {
+      throw new Error('NFC not supported on web platform');
+    }
     
     try {
-      // Create card record in database
-      const card = await createCard(userId, walletData);
+      const NfcManager = require('react-native-nfc-manager');
+      await NfcManager.requestTechnology([NfcManager.NfcTech.Ndef]);
       
-      // Write card ID to NFC tag
-      await NFC.writeTag({
-        id: card.id,
-        type: 'wallet',
-        data: walletData
-      });
+      const bytes = NfcManager.Ndef.encodeMessage([
+        NfcManager.Ndef.textRecord(JSON.stringify({
+          id: userId,
+          type: 'wallet',
+          data: walletData
+        }))
+      ]);
+      
+      await NfcManager.writeNdefMessage(bytes);
     } catch (error) {
       console.error('Error writing to NFC card:', error);
       throw error;
+    } finally {
+      try {
+        const NfcManager = require('react-native-nfc-manager');
+        await NfcManager.cancelTechnologyRequest();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
     }
   }
 
   async readCard(): Promise<any> {
-    if (Platform.OS === 'web') return null;
+    if (Platform.OS === 'web') {
+      throw new Error('NFC not supported on web platform');
+    }
     
     try {
-      const tag = await NFC.readTag();
-      if (!tag || !tag.id) throw new Error('Invalid NFC tag');
+      const NfcManager = require('react-native-nfc-manager');
+      await NfcManager.requestTechnology([NfcManager.NfcTech.Ndef]);
+      const tag = await NfcManager.getTag();
       
-      // Get card data from database
-      const cardData = await getCardData(tag.id);
-      return cardData;
+      if (tag.ndefMessage && tag.ndefMessage.length > 0) {
+        const record = tag.ndefMessage[0];
+        const text = NfcManager.Ndef.text.decodePayload(record.payload);
+        return JSON.parse(text);
+      }
+      
+      throw new Error('No data found on NFC tag');
     } catch (error) {
       console.error('Error reading NFC card:', error);
       throw error;
+    } finally {
+      try {
+        const NfcManager = require('react-native-nfc-manager');
+        await NfcManager.cancelTechnologyRequest();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
     }
   }
 
   async updateCardBalance(cardId: string, newBalance: number): Promise<void> {
-    if (Platform.OS === 'web') return;
+    if (Platform.OS === 'web') {
+      throw new Error('NFC not supported on web platform');
+    }
     
     try {
-      const cardData = await getCardData(cardId);
+      const cardData = await this.readCard();
       cardData.balance = newBalance;
-      await updateCard(cardId, cardData);
-      
-      // Update NFC tag
-      await NFC.writeTag({
-        id: cardId,
-        type: 'wallet',
-        data: cardData
-      });
+      await this.writeWalletToCard(cardId, cardData);
     } catch (error) {
       console.error('Error updating card balance:', error);
       throw error;

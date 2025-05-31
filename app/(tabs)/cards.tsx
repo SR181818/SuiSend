@@ -4,15 +4,16 @@ import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { useWallet } from '@/context/WalletContext';
-import { CreditCard, Smartphone, Wifi, WifiOff } from 'lucide-react-native';
+import { CreditCard, Smartphone, Wifi, WifiOff, Radio } from 'lucide-react-native';
 import LinearGradientButton from '@/components/common/LinearGradientButton';
 
 export default function CardsScreen() {
   const { theme } = useTheme();
-  const { walletInfo, setCardType, toggleOnlineMode } = useWallet();
+  const { walletInfo, setCardMode, isOnline, toggleOnlineMode } = useWallet();
+  const [isNfcActive, setIsNfcActive] = useState(false);
 
   const handleSetCardType = (type: 'sender' | 'receiver') => {
-    setCardType(type);
+    setCardMode(type);
     const explanation = type === 'sender' 
       ? 'This device now acts like a Mastercard/Visa card. When someone taps it, money will be sent FROM your wallet TO theirs. Perfect for making payments.'
       : 'This device now acts like a POS terminal. When someone taps it, money will be pulled FROM their wallet TO yours. Perfect for receiving payments.';
@@ -20,6 +21,14 @@ export default function CardsScreen() {
     Alert.alert(
       `${type.charAt(0).toUpperCase() + type.slice(1)} Card Mode Active`,
       explanation
+    );
+  };
+
+  const toggleNfcListening = () => {
+    setIsNfcActive(!isNfcActive);
+    Alert.alert(
+      isNfcActive ? 'NFC Disabled' : 'NFC Enabled',
+      isNfcActive ? 'Your device is no longer listening for NFC taps' : 'Your device is now listening for NFC taps'
     );
   };
 
@@ -46,7 +55,7 @@ export default function CardsScreen() {
     section: {
       margin: 20,
       padding: 20,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.surface || theme.colors.backgroundLight,
       borderRadius: 12,
     },
     sectionTitle: {
@@ -103,6 +112,32 @@ export default function CardsScreen() {
       fontSize: 16,
       fontWeight: '500',
     },
+    nfcSection: {
+      margin: 20,
+      padding: 20,
+      backgroundColor: theme.colors.surface || theme.colors.backgroundLight,
+      borderRadius: 12,
+    },
+    nfcButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      borderRadius: 12,
+      marginVertical: 8,
+    },
+    nfcActiveButton: {
+      backgroundColor: theme.colors.success,
+    },
+    nfcInactiveButton: {
+      backgroundColor: theme.colors.error,
+    },
+    nfcButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
   });
 
   return (
@@ -121,13 +156,13 @@ export default function CardsScreen() {
           <TouchableOpacity
             style={[
               styles.cardTypeButton,
-              walletInfo.cardType === 'sender' ? styles.selectedCard : styles.unselectedCard
+              walletInfo?.cardMode === 'sender' ? styles.selectedCard : styles.unselectedCard
             ]}
             onPress={() => handleSetCardType('sender')}
           >
             <CreditCard 
               size={24} 
-              color={walletInfo.cardType === 'sender' ? theme.colors.primary : theme.colors.textSecondary}
+              color={walletInfo?.cardMode === 'sender' ? theme.colors.primary : theme.colors.textSecondary}
               style={styles.cardIcon}
             />
             <View>
@@ -141,13 +176,13 @@ export default function CardsScreen() {
           <TouchableOpacity
             style={[
               styles.cardTypeButton,
-              walletInfo.cardType === 'receiver' ? styles.selectedCard : styles.unselectedCard
+              walletInfo?.cardMode === 'receiver' ? styles.selectedCard : styles.unselectedCard
             ]}
             onPress={() => handleSetCardType('receiver')}
           >
             <Smartphone 
               size={24} 
-              color={walletInfo.cardType === 'receiver' ? theme.colors.primary : theme.colors.textSecondary}
+              color={walletInfo?.cardMode === 'receiver' ? theme.colors.primary : theme.colors.textSecondary}
               style={styles.cardIcon}
             />
             <View>
@@ -159,13 +194,37 @@ export default function CardsScreen() {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.nfcSection}>
+          <Text style={styles.sectionTitle}>NFC Status</Text>
+          
+          <TouchableOpacity
+            style={[
+              styles.nfcButton,
+              isNfcActive ? styles.nfcActiveButton : styles.nfcInactiveButton
+            ]}
+            onPress={toggleNfcListening}
+          >
+            <Radio size={20} color="white" />
+            <Text style={styles.nfcButtonText}>
+              {isNfcActive ? 'NFC Active - Listening' : 'NFC Inactive - Tap to Enable'}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.cardTypeDesc, { marginTop: 12 }]}>
+            {isNfcActive 
+              ? 'Device is listening for NFC taps and ready to process transactions'
+              : 'Enable NFC to start listening for card taps'
+            }
+          </Text>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Connection Status</Text>
           
           <View style={styles.statusRow}>
             <Text style={styles.statusText}>Online Mode</Text>
             <View style={styles.onlineIndicator}>
-              {walletInfo.isOnline ? (
+              {isOnline ? (
                 <Wifi size={20} color={theme.colors.success} />
               ) : (
                 <WifiOff size={20} color={theme.colors.error} />
@@ -173,10 +232,10 @@ export default function CardsScreen() {
               <Text 
                 style={[
                   styles.onlineText, 
-                  { color: walletInfo.isOnline ? theme.colors.success : theme.colors.error }
+                  { color: isOnline ? theme.colors.success : theme.colors.error }
                 ]}
               >
-                {walletInfo.isOnline ? 'Online' : 'Offline'}
+                {isOnline ? 'Online' : 'Offline'}
               </Text>
             </View>
           </View>
@@ -184,11 +243,11 @@ export default function CardsScreen() {
           <LinearGradientButton
             onPress={toggleOnlineMode}
             colors={[theme.colors.primary, theme.colors.primaryDark]}
-            label={walletInfo.isOnline ? 'Switch to Offline Mode' : 'Switch to Online Mode'}
+            label={isOnline ? 'Switch to Offline Mode' : 'Switch to Online Mode'}
           />
 
           <Text style={[styles.cardTypeDesc, { marginTop: 12 }]}>
-            {walletInfo.isOnline 
+            {isOnline 
               ? 'Transactions will be processed immediately'
               : 'Transactions will be queued until device comes online'
             }

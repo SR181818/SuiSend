@@ -37,7 +37,6 @@ interface NFCTransaction {
 }
 
 interface WalletContextType {
-  // Wallet state
   wallet: WalletInfo | null;
   isLoading: boolean;
 
@@ -109,7 +108,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const checkNetworkStatus = async () => {
     let timeoutId: NodeJS.Timeout;
-    
+
     try {
       // Simple network check with proper timeout handling
       const controller = new AbortController();
@@ -123,7 +122,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       });
 
       clearTimeout(timeoutId);
-      
+
       if (response.ok) {
         setIsOnline(true);
         if (appMode === 'offline') {
@@ -137,12 +136,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      
+
       // Only log non-abort errors to avoid noise
       if (error.name !== 'AbortError') {
         console.log('Network check failed:', error.message);
       }
-      
+
       setIsOnline(false);
       if (appMode === 'online') {
         setAppMode('offline');

@@ -192,7 +192,7 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.walletInfoContainer}>
-          <View style={[styles.walletIcon, { backgroundColor: theme.colors.backgroundLight }]}>
+          <View style={[styles.walletIcon, { backgroundColor: theme.colors.backgroundLight || theme.colors.surface }]}>
             <KeyRound color={theme.colors.primary} size={24} />
           </View>
           <View style={styles.walletTextContainer}>
@@ -214,7 +214,7 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
               {section.title}
             </Text>
-            <View style={[styles.sectionContent, { backgroundColor: theme.colors.backgroundLight }]}>
+            <View style={[styles.sectionContent, { backgroundColor: theme.colors.backgroundLight || theme.colors.surface }]}>
               {section.items.map((item, itemIndex) => (
                 <TouchableOpacity
                   key={itemIndex}
