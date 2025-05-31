@@ -10,6 +10,7 @@ interface LinearGradientButtonProps {
   loading?: boolean;
   colors?: string[];
   style?: any;
+  textStyle?: any;
 }
 
 const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
@@ -17,8 +18,9 @@ const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
   onPress,
   disabled = false,
   loading = false,
-  colors = ['#007AFF', '#5856D6'],
+  colors = ['#667eea', '#764ba2'],
   style,
+  textStyle,
 }) => {
   return (
     <TouchableOpacity
@@ -28,7 +30,7 @@ const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
       activeOpacity={0.8}
     >
       <LinearGradient
-        colors={disabled ? ['#ccc', '#999'] : colors}
+        colors={disabled ? ['#cccccc', '#999999'] : colors}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
@@ -37,7 +39,7 @@ const LinearGradientButton: React.FC<LinearGradientButtonProps> = ({
           {loading ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
-            <Text style={styles.text}>{title}</Text>
+            <Text style={[styles.text, textStyle]}>{title}</Text>
           )}
         </View>
       </LinearGradient>
@@ -49,14 +51,24 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   gradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    flex: 1,
   },
   content: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 50,
   },
   text: {
     color: 'white',

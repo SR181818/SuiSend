@@ -84,45 +84,7 @@ interface WalletProviderProps {
   children: ReactNode;
 }
 
-// Storage utility function
-const setItemAsync = async (key: string, value: string) => {
-  try {
-    if (Platform.OS === 'web') {
-      await AsyncStorage.setItem(key, value);
-    } else {
-      await SecureStore.setItemAsync(key, value);
-    }
-  } catch (error) {
-    console.error('Error saving data to storage:', error);
-  }
-};
-
-// Storage utility function
-const getItemAsync = async (key: string) => {
-  try {
-    if (Platform.OS === 'web') {
-      return await AsyncStorage.getItem(key);
-    } else {
-      return await SecureStore.getItemAsync(key);
-    }
-  } catch (error) {
-    console.error('Error loading data from storage:', error);
-    return null;
-  }
-};
-
-// Storage utility function
-const deleteItemAsync = async (key: string) => {
-  try {
-    if (Platform.OS === 'web') {
-      await AsyncStorage.removeItem(key);
-    } else {
-      await SecureStore.deleteItemAsync(key);
-    }
-  } catch (error) {
-    console.error('Error deleting data from storage:', error);
-  }
-};
+import { setItemAsync, getItemAsync, deleteItemAsync } from '@/utils/storage';
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
@@ -147,9 +109,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const checkNetworkStatus = async () => {
     try {
-      // Simple network check
+      // Simple network check with proper timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 3000);
 
       const response = await fetch('https://httpbin.org/status/200', {
         method: 'HEAD',
@@ -157,15 +121,19 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       });
 
       clearTimeout(timeoutId);
-      setIsOnline(response.ok);
-      if (response.ok && appMode === 'offline') {
-        // Auto switch to online if network is available
-        setAppMode('online');
+      
+      if (response.ok) {
+        setIsOnline(true);
+        if (appMode === 'offline') {
+          setAppMode('online');
+        }
+      } else {
+        setIsOnline(false);
       }
-    } catch {
+    } catch (error) {
+      // Handle both network errors and abort errors
       setIsOnline(false);
       if (appMode === 'online') {
-        // Auto switch to offline if network is unavailable
         setAppMode('offline');
       }
     }

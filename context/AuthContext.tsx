@@ -1,11 +1,13 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getItemAsync, setItemAsync } from '@/utils/storage';
 
 interface AuthContextType {
-  isAuthenticated: boolean;
+  isOnboardingComplete: boolean;
   hasWallet: boolean;
-  setAuthenticated: (value: boolean) => void;
-  setHasWallet: (value: boolean) => void;
+  setOnboardingComplete: (value: boolean) => void;
+  updateHasWallet: (value: boolean) => void;
+  checkAuthStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,22 +25,40 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hasWallet, setHasWallet] = useState(false);
+  const [isOnboardingComplete, setIsOnboardingCompleteState] = useState(false);
+  const [hasWallet, setHasWalletState] = useState(false);
 
-  const setAuthenticated = (value: boolean) => {
-    setIsAuthenticated(value);
+  const setOnboardingComplete = async (value: boolean) => {
+    setIsOnboardingCompleteState(value);
+    await setItemAsync('onboarding_complete', value.toString());
   };
 
-  const setHasWalletValue = (value: boolean) => {
-    setHasWallet(value);
+  const updateHasWallet = (value: boolean) => {
+    setHasWalletState(value);
   };
+
+  const checkAuthStatus = async () => {
+    try {
+      const onboardingStatus = await getItemAsync('onboarding_complete');
+      const walletData = await getItemAsync('wallet_data');
+      
+      setIsOnboardingCompleteState(onboardingStatus === 'true');
+      setHasWalletState(!!walletData);
+    } catch (error) {
+      console.error('Error checking auth status:', error);
+    }
+  };
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
 
   const value: AuthContextType = {
-    isAuthenticated,
+    isOnboardingComplete,
     hasWallet,
-    setAuthenticated,
-    setHasWallet: setHasWalletValue,
+    setOnboardingComplete,
+    updateHasWallet,
+    checkAuthStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
