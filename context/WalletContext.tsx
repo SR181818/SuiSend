@@ -108,10 +108,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   }, []);
 
   const checkNetworkStatus = async () => {
+    let timeoutId: NodeJS.Timeout;
+    
     try {
       // Simple network check with proper timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         controller.abort();
       }, 3000);
 
@@ -130,8 +132,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       } else {
         setIsOnline(false);
       }
-    } catch (error) {
-      // Handle both network errors and abort errors
+    } catch (error: any) {
+      // Clear timeout in case of error
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // Only log non-abort errors to avoid noise
+      if (error.name !== 'AbortError') {
+        console.log('Network check failed:', error.message);
+      }
+      
       setIsOnline(false);
       if (appMode === 'online') {
         setAppMode('offline');
