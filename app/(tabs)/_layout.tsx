@@ -1,29 +1,29 @@
-import React from 'react';
+
 import { Tabs } from 'expo-router';
-import { useTheme } from '@/context/ThemeContext';
-import { Wallet, CreditCard, ChartLine, BellRing, Settings } from 'lucide-react-native';
+import React from 'react';
+import { Home, CreditCard, TrendingUp, Settings, Bell } from 'lucide-react-native';
 import TabBarIcon from '@/components/navigation/TabBarIcon';
 
 export default function TabLayout() {
-  const { theme } = useTheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
-        },
         headerShown: false,
-      }}>
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: '#8E8E93',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#C6C6C8',
+          borderTopWidth: 1,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
+            <TabBarIcon icon={Home} color={color} focused={focused} />
           ),
         }}
       />
@@ -32,16 +32,7 @@ export default function TabLayout() {
         options={{
           title: 'Cards',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'card' : 'card-outline'} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          title: 'Analytics',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'analytics' : 'analytics-outline'} color={color} />
+            <TabBarIcon icon={CreditCard} color={color} focused={focused} />
           ),
         }}
       />
@@ -50,7 +41,7 @@ export default function TabLayout() {
         options={{
           title: 'Markets',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'trending-up' : 'trending-up-outline'} color={color} />
+            <TabBarIcon icon={TrendingUp} color={color} focused={focused} />
           ),
         }}
       />
@@ -59,7 +50,7 @@ export default function TabLayout() {
         options={{
           title: 'Notifications',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'notifications' : 'notifications-outline'} color={color} />
+            <TabBarIcon icon={Bell} color={color} focused={focused} />
           ),
         }}
       />
@@ -68,8 +59,14 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'settings' : 'settings-outline'} color={color} />
+            <TabBarIcon icon={Settings} color={color} focused={focused} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          href: null, // Hide from tab bar
         }}
       />
     </Tabs>

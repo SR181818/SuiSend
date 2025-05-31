@@ -1,30 +1,26 @@
+
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Bone as Icon } from 'lucide-react-native';
-import Animated, { useAnimatedStyle, interpolateColor, withTiming } from 'react-native-reanimated';
+import { LucideIcon } from 'lucide-react-native';
 
 interface TabBarIconProps {
-  icon: any;
+  icon: LucideIcon;
   color: string;
-  size: number;
+  size?: number;
   focused?: boolean;
 }
 
-const TabBarIcon: React.FC<TabBarIconProps> = ({ icon, color, size, focused }) => {
-  const IconComponent = icon;
-  
+const TabBarIcon: React.FC<TabBarIconProps> = ({ icon: IconComponent, color, size = 24, focused }) => {
+  if (!IconComponent) {
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <IconComponent color={color} size={size} />
-    </View>
+    <IconComponent
+      color={color}
+      size={size}
+      strokeWidth={focused ? 2.5 : 2}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default TabBarIcon;
