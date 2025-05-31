@@ -12,7 +12,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { theme, toggleTheme, isDarkMode } = useTheme();
   const { logout } = useAuth();
-  const { walletInfo } = useWallet();
+  const { wallet } = useWallet();
   
   const [biometricEnabled, setBiometricEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -197,10 +197,10 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.walletTextContainer}>
             <Text style={[styles.walletName, { color: theme.colors.text }]}>
-              {walletInfo.name || 'My Wallet'}
+              {wallet?.name || 'My Wallet'}
             </Text>
             <Text style={[styles.walletAddress, { color: theme.colors.textSecondary }]}>
-              {walletInfo.address ? `${walletInfo.address.slice(0, 6)}...${walletInfo.address.slice(-4)}` : ''}
+              {wallet?.address ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : 'No wallet connected'}
             </Text>
           </View>
         </View>
