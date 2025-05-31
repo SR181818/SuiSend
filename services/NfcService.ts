@@ -1,135 +1,148 @@
 import { Platform } from 'react-native';
+import { Alert } from 'react-native';
 
-// Type definitions for NFC
-export interface NfcTag {
-  id: string;
-  type: string;
-  data?: any;
-}
-
-export interface NfcWriteOptions {
-  type: string;
-  data: string;
-}
+// Mock NFC data for web testing
+const mockNfcData = {
+  id: 'mock-nfc-tag',
+  type: 'NTAG215',
+  data: {
+    balance: 100,
+    lastTransaction: Date.now(),
+  }
+};
 
 class NfcService {
-  private isSupported = false;
-  private isInitialized = false;
+  private isSupported: boolean;
+  private isInitialized: boolean;
+  private mockMode: boolean;
 
   constructor() {
-    this.checkSupport();
-  }
-
-  private async checkSupport(): Promise<void> {
-    try {
-      if (Platform.OS === 'web') {
-        // Check for Web NFC API support
-        this.isSupported = 'NDEFReader' in window;
-        if (this.isSupported) {
-          console.log('Web NFC API is supported');
-        } else {
-          console.log('Web NFC API is not supported on this browser');
-        }
-      } else {
-        // For mobile platforms, we'll assume NFC is available
-        // In a real app, you'd check device capabilities here
-        this.isSupported = Platform.OS === 'android' || Platform.OS === 'ios';
-        console.log(`NFC support check for ${Platform.OS}: ${this.isSupported}`);
-      }
-    } catch (error) {
-      console.error('Error checking NFC support:', error);
-      this.isSupported = false;
-    }
+    this.isSupported = Platform.OS !== 'web';
+    this.isInitialized = false;
+    this.mockMode = Platform.OS === 'web';
   }
 
   async start(): Promise<boolean> {
-    try {
-      if (!this.isSupported) {
-        throw new Error('NFC not supported on this platform');
-      }
+    if (this.mockMode) {
+      console.log('Starting NFC in mock mode (web)');
+      this.isInitialized = true;
+      return true;
+    }
 
-      if (Platform.OS === 'web') {
-        // For web, we'll simulate NFC availability
-        this.isInitialized = true;
-        console.log('NFC service started successfully (web simulation)');
-        return true;
-      } else {
-        // For mobile platforms in Expo, we'll simulate availability
-        // In a bare React Native app, you would use react-native-nfc-manager here
-        this.isInitialized = true;
-        console.log('NFC service started successfully (mobile simulation)');
-        return true;
-      }
+    try {
+      // In a real app, we would initialize react-native-nfc-manager here
+      this.isInitialized = true;
+      return true;
     } catch (error) {
-      console.error('Error starting NFC service:', error);
-      throw error;
+      console.error('Failed to start NFC:', error);
+      return false;
     }
   }
 
   async stop(): Promise<void> {
+    if (!this.isInitialized) return;
+
     try {
-      if (this.isInitialized) {
-        this.isInitialized = false;
-        console.log('NFC service stopped');
+      if (!this.mockMode) {
+        // In a real app, cleanup NFC manager
       }
+      this.isInitialized = false;
     } catch (error) {
-      console.error('Error stopping NFC service:', error);
+      console.error('Error stopping NFC:', error);
     }
   }
 
-  async readTag(): Promise<NfcTag | null> {
-    try {
-      if (!this.isInitialized) {
-        throw new Error('NFC service not initialized');
-      }
+  async createWalletCard(address: string, mode: 'sender' | 'receiver', balance: number): Promise<any> {
+    if (!this.isInitialized) {
+      throw new Error('NFC not initialized');
+    }
 
-      if (Platform.OS === 'web') {
-        // Web NFC simulation
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              id: 'web-nfc-tag-' + Date.now(),
-              type: 'text/plain',
-              data: 'Sample NFC data from web'
-            });
-          }, 1000);
-        });
-      } else {
-        // Mobile NFC simulation
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              id: 'mobile-nfc-tag-' + Date.now(),
-              type: 'text/plain',
-              data: 'Sample NFC data from mobile'
-            });
-          }, 1000);
-        });
-      }
+    const cardData = {
+      id: `card_${Date.now()}`,
+      address,
+      mode,
+      balance,
+      created: Date.now()
+    };
+
+    if (this.mockMode) {
+      console.log('Creating mock wallet card:', cardData);
+      return cardData;
+    }
+
+    try {
+      // In a real app, write to NFC tag
+      return cardData;
     } catch (error) {
-      console.error('Error reading NFC tag:', error);
-      return null;
+      console.error('Error creating wallet card:', error);
+      throw error;
     }
   }
 
-  async writeTag(options: NfcWriteOptions): Promise<boolean> {
+  async readCard(): Promise<any> {
+    if (!this.isInitialized) {
+      throw new Error('NFC not initialized');
+    }
+
+    if (this.mockMode) {
+      console.log('Reading mock NFC card');
+      return mockNfcData;
+    }
+
     try {
-      if (!this.isInitialized) {
-        throw new Error('NFC service not initialized');
-      }
-
-      console.log('Writing NFC tag:', options);
-
-      // Simulate write operation
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          console.log('NFC tag written successfully');
-          resolve(true);
-        }, 1000);
-      });
+      // In a real app, read from NFC tag
+      return mockNfcData;
     } catch (error) {
-      console.error('Error writing NFC tag:', error);
-      return false;
+      console.error('Error reading NFC card:', error);
+      throw error;
+    }
+  }
+
+  async writeWalletToCard(userId: string, walletData: any): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('NFC not initialized');
+    }
+
+    if (this.mockMode) {
+      console.log('Writing mock wallet data:', { userId, walletData });
+      return;
+    }
+
+    try {
+      // In a real app, write wallet data to NFC tag
+      console.log('Wallet data written to card');
+    } catch (error) {
+      console.error('Error writing wallet to card:', error);
+      throw error;
+    }
+  }
+
+  async updateCardBalance(cardId: string, newBalance: number): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('NFC not initialized');
+    }
+
+    if (this.mockMode) {
+      console.log('Updating mock card balance:', { cardId, newBalance });
+      return;
+    }
+
+    try {
+      // In a real app, update balance on NFC tag
+      console.log('Card balance updated');
+    } catch (error) {
+      console.error('Error updating card balance:', error);
+      throw error;
+    }
+  }
+
+  unregisterTagEvent(): void {
+    if (!this.isInitialized || this.mockMode) return;
+
+    try {
+      // In a real app, unregister NFC tag event listeners
+    } catch (error) {
+      console.error('Error unregistering tag event:', error);
     }
   }
 
@@ -139,26 +152,6 @@ class NfcService {
 
   isNfcEnabled(): boolean {
     return this.isInitialized;
-  }
-
-  async requestPermissions(): Promise<boolean> {
-    try {
-      if (Platform.OS === 'web') {
-        // For web, check if permissions are needed
-        if ('permissions' in navigator) {
-          const permission = await (navigator as any).permissions.query({ name: 'nfc' });
-          return permission.state === 'granted' || permission.state === 'prompt';
-        }
-        return true;
-      } else {
-        // For mobile, simulate permission request
-        console.log('NFC permissions requested');
-        return true;
-      }
-    } catch (error) {
-      console.error('Error requesting NFC permissions:', error);
-      return false;
-    }
   }
 }
 
