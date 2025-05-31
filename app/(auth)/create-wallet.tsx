@@ -17,7 +17,7 @@ export default function CreateWalletScreen() {
   const { theme } = useTheme();
   const { createWallet } = useWallet();
   const { setHasWallet } = useAuth();
-  
+
   const [mnemonic, setMnemonic] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasCopied, setHasCopied] = useState<boolean>(false);
@@ -72,7 +72,7 @@ export default function CreateWalletScreen() {
     try {
       await createWallet(mnemonic);
       setHasWallet(true);
-      router.replace('/(auth)/backup-wallet');
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('Error creating wallet:', error);
       Alert.alert('Error', 'Failed to create wallet. Please try again.');
@@ -128,7 +128,7 @@ export default function CreateWalletScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           <Text style={[styles.mnemonicDescription, { color: theme.colors.textSecondary }]}>
             Write down these 12 words in order and keep them in a secure place. Anyone with access to this phrase can recover your wallet.
           </Text>

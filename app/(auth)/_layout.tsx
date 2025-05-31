@@ -6,7 +6,6 @@ export default function AuthLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="create-wallet" />
       <Stack.Screen name="import-wallet" />
-      <Stack.Screen name="backup-wallet" />
     </Stack>
   );
 }
