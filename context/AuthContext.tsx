@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getItemAsync, setItemAsync } from '@/utils/storage';
 
@@ -5,7 +6,7 @@ interface AuthContextType {
   isOnboardingComplete: boolean;
   hasWallet: boolean;
   setOnboardingComplete: (value: boolean) => void;
-  updateHasWallet: (value: boolean) => void;
+  setHasWallet: (value: boolean) => void;
   checkAuthStatus: () => Promise<void>;
 }
 
@@ -29,10 +30,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const setOnboardingComplete = async (value: boolean) => {
     setIsOnboardingCompleteState(value);
-    await setItemAsync('onboarding_complete', value.toString());
+    try {
+      await setItemAsync('onboarding_complete', value.toString());
+    } catch (error) {
+      console.error('Error saving onboarding status:', error);
+    }
   };
 
-  const updateHasWallet = (value: boolean) => {
+  const setHasWallet = (value: boolean) => {
     setHasWalletState(value);
   };
 
@@ -56,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isOnboardingComplete,
     hasWallet,
     setOnboardingComplete,
-    updateHasWallet,
+    setHasWallet,
     checkAuthStatus,
   };
 
