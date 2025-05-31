@@ -280,18 +280,23 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    startNfcListening();
+  }, []);
+
   const startNfcListening = async () => {
     try {
-      await NfcService.start();
-      setIsNfcListening(true);
+      const isSupported = NfcService.isNfcSupported();
+      if (!isSupported) {
+        console.log('NFC not supported on this device/platform');
+        return;
+      }
 
-      // Start listening for NFC tags
-      NfcService.registerTagEvent((tag) => {
-        handleNfcTagDetected(tag);
-      });
+      await NfcService.start();
+      console.log('NFC service started successfully');
     } catch (error) {
       console.error('Error starting NFC:', error);
-      throw error;
+      // Don't throw the error, just log it to prevent app crashes
     }
   };
 
